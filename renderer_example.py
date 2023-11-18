@@ -6,32 +6,8 @@ import os
 import struct
 from PIL import Image
 import numpy as np
+import json
 
-
-# You can read each image separately and append the images to a list. Finally convert the list to an numpy.array.
-# In the following snippet imageList is a list of filenames and width and height is the size of an individual image (the images must all be the same size):
-
-def createTextureArray(imageList, width, height):
-
-    # depth = len(imageList)
-
-    dataList = []
-    for filename in imageList:
-        
-        image = Image.open(filename)
-        if width != image.size[0] or height != image.size[1]:
-            raise ValueError(f"image size mismatch: {image.size[0]}x{image.size[1]}")
-        
-        dataList.append(list(image.getdata()))
-
-    return np.array(dataList, np.uint8)
-
-    # imageArrayData = np.array(dataList, np.uint8)
-
-    # components = 4 # 4 for RGBA, 3 for RGB
-    # context.texture_array((width, height, depth), components, imageArrayData)
-
-# print(createTextureArray(['a.png', 'b.png', 'c.png'], 96,96))
 
 class HelloWorld2D:
     def __init__(self, ctx, reserve='4MB'):
@@ -42,6 +18,7 @@ class HelloWorld2D:
 
                 uniform vec2 Pan;
                 uniform float zz;
+                uniform float Zoo;
 
                 in vec2 in_vert;
                 in vec4 in_color;
@@ -49,8 +26,22 @@ class HelloWorld2D:
                 out vec4 v_color;
 
                 void main() {
-                    v_color = in_color*zz;
-                    gl_Position = vec4(in_vert - Pan, 0.0, 1.0);
+                    // Create the orthographic projection matrix
+                    mat4 projection = mat4(
+                        vec4(1.0-Zoo/5, 0.0, 0.0, 0.0),
+                        vec4(0.0, 1.0-Zoo/5, 0.0, 0.0),
+                        vec4(0.0, 0.0, -1.0, 0.0),
+                        vec4(0.0-Pan.x, 0.0-Pan.y, 0.0, 1.0)
+                    );
+
+                    // Apply the orthographic projection matrix to the vertex position
+                    vec4 ortho_position = projection * vec4(in_vert, 0.0, 1.0);
+
+                    // Pass the color to the fragment shader
+                    v_color = in_color * zz;
+
+                    // Set the transformed position
+                    gl_Position = ortho_position;
                 }
             ''',
             fragment_shader='''
@@ -79,70 +70,164 @@ class HelloWorld2D:
             vertex_shader='''
                 #version 330
 
+                in vec2 in_pos;
                 in vec2 in_vert;
-                in vec3 in_text;
+                in vec2 tex_coord;
 
-                out vec3 v_text;
+                out vec2 uvCoord;
 
                 void main() {
-                    v_text = in_text;
-                    gl_Position = vec4(in_vert, 0.0, 1.0);
+                    gl_Position = vec4(in_pos+in_vert, 0.0, 1.0);
+                    uvCoord = tex_coord;
                 }
+
             ''',
             fragment_shader='''
                 #version 330
 
-                uniform sampler2DArray Texture;
+                uniform sampler2D tex;
 
-                in vec3 v_text;
+                in vec2 uvCoord;
+                out vec4 outColor;
 
-                out vec4 color;
+                float median(float r, float g, float b) {
+                    return max(min(r, g), min(max(r, g), b));
+                }
+
+                float screenPxRange(sampler2D tex) {
+                    vec2 unitRange = vec2(6.0)/vec2(textureSize(tex, 0));
+                    vec2 screenTexSize = vec2(1.0)/fwidth(uvCoord);
+                    return max(0.5*dot(unitRange, screenTexSize), 1.0);
+                }
 
                 void main() {
-                    color = texture(Texture, v_text);
+                
+                    //vec2 inverteduvCoord = vec2(uvCoord.s, 1.0 - uvCoord.t);
+
+                    vec4 texel = texture(tex, uvCoord);
+                    
+
+                    float pxRange; 
+                    pxRange = screenPxRange(tex);
+
+                    float dist = median(texel.r, texel.g, texel.b);
+
+                    float pxDist = pxRange * (dist - 0.5);
+                    float opacity = clamp(pxDist + 0.5, 0.0, 1.0);
+
+                    outColor = vec4(0.3, 0.8, 0.8, opacity*texel.a);
                 }
+
             ''',
         )
 
+        # Opening JSON file
+        f = open('msdf_gen/fonts.json')
+        # returns JSON object as # a dictionary
+        fdata = json.load(f)
+        # Closing file
+        f.close()
+
+        def txt2vtx(str):
+            wi = he = 256
+            arr=[]
+            for i,s in enumerate(str):
+                for glyph in fdata.get("glyphs", []):
+                    if glyph.get("unicode") == ord(s):
+                        dd = glyph.get("atlasBounds", {})
+                        pb = glyph.get("planeBounds", {})
+
+                        xl=pb['left']
+                        xr=pb['right']
+                        yt=pb['top']
+                        yb=pb['bottom']
+
+                        sl=dd['left']/wi
+                        sr=dd['right']/wi
+                        tt=dd['top']/he
+                        tb=dd['bottom']/he
+              
+                        sc = 0.07
+
+                        ob = [
+                            # -0.5, -0.5, 0.0, 1.0,
+                            # 0.5, -0.5, 1.0, 1.0, 
+                            # 0.5, 0.5,  1.0, 0.0, 
+                            # -0.5, 0.5, 0.0, 0.0, 
+
+                            (xl+i*.5)*sc, yb*sc, sl, 1-tb,
+                            (xr+i*.5)*sc, yb*sc, sr, 1-tb, 
+                            (xr+i*.5)*sc, yt*sc, sr, 1-tt, 
+                            (xl+i*.5)*sc, yt*sc, sl, 1-tt, 
+                        ]
+
+                        # print(ob)
+                        # print(ord(s))
+
+                        arr.append(ob)
+            return arr
+
+
+
 
         # Buffer
-        self.vbo3 = ctx.buffer(struct.pack(
-            '12f',
-            1.0, 0.0, 0.5, 1.0,
-            -0.5, 0.86, 1.0, 0.0,
-            -0.5, -0.86, 0.0, 0.0,
-        ))
+        # xx=np.array([
+        #     -0.5, -0.5, 0.0, 1.0,  # Vertex 0, s,t
+        #     0.5, -0.5, 1.0, 1.0,   # Vertex 1
+        #     0.5, 0.5,  1.0, 0.0,   # Vertex 2
+        #     -0.5, 0.5, 0.0, 0.0,   # Vertex 3
+
+        #     0.5, -0.5, 0.0, 1.0,  # Vertex 4, s,t
+        #     1.5, -0.5, 1.0, 1.0,   # Vertex 5
+        #     1.5, 0.5,  1.0, 0.0,   # Vertex 6
+        #     0.5, 0.5, 0.0, 0.0,   # Vertex 7
+        # ])
+
+        vertices=np.array([ txt2vtx('12734.98234cm') ])
+        self.vbo3 = ctx.buffer(vertices.astype('f4'))
+
+        # print(xx)
+
 
         # Put everything together
 
-        
+
+        # Indices pattern for a single rectangle
+        rectangle_pattern = np.array([0, 1, 2,  0, 2, 3], dtype='i4')
+
+        # Repeat the pattern for the specified number of rectangles
+        indices = np.tile(rectangle_pattern, vertices.size//16 ) + np.repeat(np.arange(0, vertices.size//16  * 4, 4), 6)
+        # print(indices)
+
+        # Indices are given to specify the order of drawing
+        # indices = np.array([0,1,2, 0,2,3, 4,5,6, 4,6,7])
+        self.ibo = self.ctx.buffer(indices.astype('i4'))
+
+
+        self.vao3 = self.ctx.vertex_array(self.prog2, [(self.vbo3, '2f 2f', 'in_vert', 'tex_coord')], self.ibo)
+
+
+
+
+
+        # self.vao3 = ctx.vertex_array(self.prog2, self.vbo3, 'in_vert')
 
         # Texture
 
-        # img = Image.open(os.path.join(os.path.dirname(__file__), 'msdf.png'))
-        # texture = ctx.texture(img.size, 3, img.tobytes())
+        img = Image.open(os.path.join(os.path.dirname(__file__), 'msdf_gen/fonts.bmp')).convert('RGB')
+        texture = ctx.texture(img.size, 3, img.tobytes())
+        texture.use()
+
+
+        # Opening the binary file in binary mode as rb(read binary)
+        # f = open('msdf_gen/fonts.binfloat', mode="rb")
+        # img = f.read()
+        # f.close()
+        # texture = ctx.texture((148,148), 4, img, dtype='f4')
         # texture.use()
 
-        # texture_arr = ctx.texture_array((96, 96, 3), 3, createTextureArray(['a.png', 'b.png', 'c.png'], 96,96))
-        # # texture.use()
 
-        images = [
-            Image.new('RGB', (32, 32), 'red'),
-            Image.new('RGB', (32, 32), color=(33,255,0) ),
-            Image.new('RGB', (32, 32), 'blue'),
-        ]
-
-        merged = b''.join(img.tobytes() for img in images)
-
-        texture_arr = ctx.texture_array((32, 32 ,3), 3, merged)
-        self.prog2['Texture']=1
-        texture_arr.use(location=1)
-
-        # first_texture.use(location=0)
-        # second_texture.use(location=1
-
-
-        self.vao3 = ctx.vertex_array(self.prog2, self.vbo3, 'in_vert', 'in_text')
+        
 
 
     def chcol (self,col):
@@ -159,7 +244,12 @@ class HelloWorld2D:
         self.vao.render(moderngl.LINE_STRIP, vertices=len(data) // 2)
        
         # print('here')
-        self.vao3.render(moderngl.TRIANGLE_FAN, vertices=3)
+        # for i in range(0, 2):
+            # self.vao3.render(moderngl.TRIANGLE_FAN, first=i*4, vertices=4)
+        
+        # Render all instances of the square
+        self.vao3.render()
+
 
     def dodo(self, pts):
         data2 = pts.astype('f4').tobytes()
@@ -169,16 +259,28 @@ class HelloWorld2D:
         for i in range(0, len(pts)):
             self.vbo2.orphan()
             self.vbo2.write(data2)
+
             self.vao2.render(moderngl.TRIANGLE_FAN, first=i*6, vertices=6)
 
         # print(len(pts))
-        
+
+    def zom(self, z):
+        self.prog['Zoo'].value = z
+        # pass
+
     def pan(self, pos):
         self.prog['Pan'].value = pos
 
-    def clear(self, color=(0.0, .1, 0, 0)):
+    def clear(self, color=(0.0, .1, 0.1, 0)):
+        # fbo1 = self.ctx.framebuffer(self.ctx.renderbuffer((512, 512), samples=4))
+        # fbo1.use()
+        
+        self.ctx.enable(moderngl.DEPTH_TEST)
+        self.ctx.enable(moderngl.BLEND)
+
         self.ctx.clear(*color)
 
+    
     def plot(self, points, type='line'):
         data = points.astype('f4').tobytes()
         self.vbo.orphan()

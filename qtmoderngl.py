@@ -1,71 +1,42 @@
-from PyQt6 import QtGui, QtWidgets, QtCore, QtOpenGL
-
-from PyQt6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget
+from PyQt6 import QtCore
 from PyQt6.QtOpenGLWidgets import QOpenGLWidget
 from PyQt6.QtGui import QSurfaceFormat
 
 import moderngl
 
-# pylint: disable=E0202
-
-
-class QModernGLWidget(QOpenGLWidget):
+class ModernGLWidget(QOpenGLWidget):
     def __init__(self):
         super().__init__()
 
-        fmt = QSurfaceFormat()
-        fmt.setVersion(3, 3)
-        fmt.setSamples(4)  # if you want multi-sampling
-        QSurfaceFormat.setDefaultFormat(fmt)
+        # fmt = QSurfaceFormat()
+        # fmt.setVersion(3, 3)
+        # fmt.setSamples(8)  # if you want multi-sampling
+        # QSurfaceFormat.setDefaultFormat(fmt)
 
-        self.timer = QtCore.QElapsedTimer()
+        # self.timer = QtCore.QElapsedTimer()
 
-    def initializeGL(self):
+    # def initializeGL(self):
         # self.ctx = moderngl.create_context()
         # self.screen = self.ctx.detect_framebuffer()
         # self.init()
-        pass
+        # pass
 
-    def init(self):
-        pass  # Your initialization code here
+    # def init(self):
+        # pass  # Your initialization code here
 
     def paintGL(self):
         self.ctx = moderngl.create_context()
+
         self.screen = self.ctx.detect_framebuffer()
         self.init()
-        self.render()
+        # self.render()
         self.paintGL = self.render
 
-    def render(self):
-        # self.ctx.clear()  # Set appropriate clear color
-        pass
-        # Your rendering code here
-
-
-# class QModernGLWidgetOld(QOpenGLWidget):
-    # def __init__(self):
-    #     super().__init__()
-
-    #     fmt = QSurfaceFormat()
-    #     fmt.setVersion(3, 3)
-    #     fmt.setProfile(QSurfaceFormat.OpenGLContextProfile.CoreProfile)
-    #     fmt.setDepthBufferSize(24)
-    #     fmt.setSwapInterval(0)
-    #     fmt.setSamples(8)
-    #     self.setFormat(fmt)
-
-    # def initializeGL(self):
-    #     pass
-
-    # def paintGL(self):
-    #     self.ctx = moderngl.create_context()
-    #     self.screen = self.ctx.detect_framebuffer(self.defaultFramebufferObject())
-    #     self.init()
-    #     self.render()
-    #     self.paintGL = self.render
-
-    # def init(self):
-    #     pass
+    # def resizeGL(self, w, h):
+        # print('resize', w,h)
+        # self.ctx.viewport = (0, 0, w, h)
 
     # def render(self):
-    #     pass
+        # self.ctx.clear()  # Set appropriate clear color
+        # pass
+        # Your rendering code here

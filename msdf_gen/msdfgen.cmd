@@ -1,0 +1,1 @@
+msdf-atlas-gen.exe -font C:\Windows\Fonts\consola.ttf -charset charset.txt -format bmp -imageout fonts.bmp -json fonts.json -type msdf -pots -pxrange 6
