@@ -197,6 +197,8 @@ class MyWidget(ModernGLWidget):
         if event.button() == Qt.MouseButton.MiddleButton:
             pan_tool.start_drag(*self.mycoord())
             self.scene.pan(pan_tool.value)
+
+            self.scene.mp(self.mycoord())
         
         if event.button() == Qt.MouseButton.LeftButton:
             self.linecreate(*self.mycoord())
