@@ -30,9 +30,9 @@ class HelloWorld2D:
 
                     vec3 cameraPos = vec3(Pan.x, Pan.y, 0.5f); 
 
-                    vec3 eye = vec3(mp.x,mp.y, 3);
-                    vec3 center = vec3(0.0,0, 0.0);
-                    vec3 up = vec3(0.0, 0.0, 1.0);
+                    vec3 eye = vec3(0,0, -3);
+                    vec3 center = vec3(0,0, 0.0);
+                    vec3 up = vec3(0.0, 1.0, 0.0);
 
                     vec3 _f = normalize(center - eye);
                     vec3 _r = normalize(cross(up, _f));
@@ -41,37 +41,39 @@ class HelloWorld2D:
                     mat4 view = mat4(
                         vec4(_r, -dot(_r, eye)),
                         vec4(u, -dot(u, eye)),
-                        vec4(-_f, dot(_f, eye)),
-                        vec4(0.0, 0.0, 0.0, 1.0)
+                        vec4(-_f, -dot(_f, eye)),
+                        vec4(-Pan, 0.0, 1.0)
                     );
 
                     float r,l,t,b,f,n=0;
+
                     l=-1;
                     r=1;
                     b=-1;
                     t=1;
+
                     n=-1;
                     f=1;
                    
-                    //mat4 proj = mat4(
-                    //    vec4(2/(r-l), 0, 0, -(r+l)/(r-l)),
-                    //    vec4(0, 2/(t-b), 0, -(t+b)/(t-b)),
-                    //    vec4(0, 0, -2/(f-n), -(f+n)/(f-n)),
-                    //    vec4(0, 0, 0, 1.0)
-                   // );
+                    mat4 proj = mat4(
+                       vec4(2/(r-l), 0, 0, -(r+l)/(r-l)),
+                       vec4(0, 2/(t-b), 0, -(t+b)/(t-b)),
+                       vec4(0, 0, -2/(f-n), -(f+n)/(f-n)),
+                       vec4(0, 0, 0, 1.0)
+                    );
 
-                        mat4 proj = mat4(
-                            vec4(2.0 / (r - l), 0.0, 0.0, 0.0),
-                            vec4(0.0, 2.0 / (t - b), 0.0, 0.0),
-                            vec4(0.0, 0.0, -2.0 / (f - n), 0.0),
-                            vec4(-(r + l) / (r - l), -(t + b) / (t - b), -(f + n) / (f - n), 1.0)
-                        );
+                     //   mat4 proj = mat4(
+                     //       vec4(2.0 / (r - l), 0.0, 0.0, 0.0),
+                       //     vec4(0.0, 2.0 / (t - b), 0.0, 0.0),
+                         //   vec4(0.0, 0.0, -2.0 / (f - n), 0.0),
+                          //  vec4(-(r + l) / (r - l), -(t + b) / (t - b), -(f + n) / (f - n), 1.0)
+                        //);
 
                     // Pass the color to the fragment shader
                     v_color = in_color * zz;
 
                     // Set the transformed position
-                    gl_Position = proj*view * vec4(in_vert, 0.0, 1.0);
+                    gl_Position = proj* view * vec4(in_vert, 0.0, 1.0);
                 }
             ''',
             fragment_shader='''
@@ -299,12 +301,12 @@ class HelloWorld2D:
         # pass
 
     def mp(self, po):
-        self.prog['mp'].value = po
-        # pass
+        # self.prog['mp'].value = po
+        pass
     
     def pan(self, pos):
-        # self.prog['Pan'].value = pos
-        pass
+        self.prog['Pan'].value = pos
+        # pass
 
     def clear(self, color=(0.0, .1, 0.1, 0)):
         # fbo1 = self.ctx.framebuffer(self.ctx.renderbuffer((512, 512), samples=4))
