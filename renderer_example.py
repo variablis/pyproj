@@ -3,156 +3,78 @@
 import moderngl
 
 import os
-import struct
 from PIL import Image
 import numpy as np
 import json
+from pathlib import Path
+
+from pyrr import Matrix44
+import math
+
+
+def grid(size, steps):
+    u = np.repeat(np.linspace(-size, size, steps), 2)
+    v = np.tile([-size, size], steps)
+    w = np.zeros(steps * 2)
+    return np.concatenate([np.dstack([u, v, w]), np.dstack([v, u, w])])
 
 
 class HelloWorld2D:
     def __init__(self, ctx, reserve='4MB'):
+
+        self.ppp=(0,0)
+        self.zomf=1
+
         self.ctx = ctx
+
         self.prog = self.ctx.program(
-            vertex_shader='''
-                #version 330
-
-                uniform vec2 Pan;
-                uniform float zz;
-                uniform float Zoo;
-                uniform vec2 mp;
-
-                in vec2 in_vert;
-                in vec4 in_color;
-
-                out vec4 v_color;
-
-                void main() {
-
-                    vec3 cameraPos = vec3(Pan.x, Pan.y, 0.5f); 
-
-                    vec3 eye = vec3(0,0, -3);
-                    vec3 center = vec3(0,0, 0.0);
-                    vec3 up = vec3(0.0, 1.0, 0.0);
-
-                    vec3 _f = normalize(center - eye);
-                    vec3 _r = normalize(cross(up, _f));
-                    vec3 u = cross(_f, _r);
-
-                    mat4 view = mat4(
-                        vec4(_r, -dot(_r, eye)),
-                        vec4(u, -dot(u, eye)),
-                        vec4(-_f, -dot(_f, eye)),
-                        vec4(-Pan, 0.0, 1.0)
-                    );
-
-                    float r,l,t,b,f,n=0;
-
-                    l=-1;
-                    r=1;
-                    b=-1;
-                    t=1;
-
-                    n=-1;
-                    f=1;
-                   
-                    mat4 proj = mat4(
-                       vec4(2/(r-l), 0, 0, -(r+l)/(r-l)),
-                       vec4(0, 2/(t-b), 0, -(t+b)/(t-b)),
-                       vec4(0, 0, -2/(f-n), -(f+n)/(f-n)),
-                       vec4(0, 0, 0, 1.0)
-                    );
-
-                     //   mat4 proj = mat4(
-                     //       vec4(2.0 / (r - l), 0.0, 0.0, 0.0),
-                       //     vec4(0.0, 2.0 / (t - b), 0.0, 0.0),
-                         //   vec4(0.0, 0.0, -2.0 / (f - n), 0.0),
-                          //  vec4(-(r + l) / (r - l), -(t + b) / (t - b), -(f + n) / (f - n), 1.0)
-                        //);
-
-                    // Pass the color to the fragment shader
-                    v_color = in_color * zz;
-
-                    // Set the transformed position
-                    gl_Position = proj* view * vec4(in_vert, 0.0, 1.0);
-                }
-            ''',
-            fragment_shader='''
-                #version 330
-
-                in vec4 v_color;
-
-                out vec4 f_color;
-
-                void main() {
-                    f_color = v_color;
-                }
-            ''',
+            vertex_shader=Path('shaders/hello.vert').read_text(),
+            fragment_shader=Path('shaders/hello.frag').read_text()
         )
 
+        self.mvp1 = self.prog['Mvp']
         self.vbo = ctx.buffer(reserve='4MB', dynamic=True)
         self.vao = ctx.vertex_array(self.prog, self.vbo, 'in_vert', 'in_color')
 
         self.vbo2 = ctx.buffer(reserve='4MB', dynamic=True)
         self.vao2 = ctx.vertex_array(self.prog, self.vbo2, 'in_vert', 'in_color')
 
-
-        # Shaders & Program
-
-        self.prog2 = self.ctx.program(
+        self.prog4 = self.ctx.program(
             vertex_shader='''
                 #version 330
 
-                in vec2 in_pos;
-                in vec2 in_vert;
-                in vec2 tex_coord;
+                uniform mat4 Mvp;
 
-                out vec2 uvCoord;
+                in vec3 in_vert;
 
                 void main() {
-                    gl_Position = vec4(in_pos+in_vert, 0.0, 1.0);
-                    uvCoord = tex_coord;
+                    gl_Position = Mvp * vec4(in_vert, 1.0);
                 }
-
             ''',
             fragment_shader='''
                 #version 330
 
-                uniform sampler2D tex;
-
-                in vec2 uvCoord;
-                out vec4 outColor;
-
-                float median(float r, float g, float b) {
-                    return max(min(r, g), min(max(r, g), b));
-                }
-
-                float screenPxRange(sampler2D tex) {
-                    vec2 unitRange = vec2(6.0)/vec2(textureSize(tex, 0));
-                    vec2 screenTexSize = vec2(1.0)/fwidth(uvCoord);
-                    return max(0.5*dot(unitRange, screenTexSize), 1.0);
-                }
+                out vec4 f_color;
 
                 void main() {
-                
-                    //vec2 inverteduvCoord = vec2(uvCoord.s, 1.0 - uvCoord.t);
-
-                    vec4 texel = texture(tex, uvCoord);
-                    
-
-                    float pxRange; 
-                    pxRange = screenPxRange(tex);
-
-                    float dist = median(texel.r, texel.g, texel.b);
-
-                    float pxDist = pxRange * (dist - 0.5);
-                    float opacity = clamp(pxDist + 0.5, 0.0, 1.0);
-
-                    outColor = vec4(0.3, 0.8, 0.8, opacity*texel.a);
+                    f_color = vec4(0.0, 1, 0.3, .2);
                 }
-
             ''',
         )
 
+        self.mvp = self.prog4['Mvp']
+        self.vbo4 = ctx.buffer(grid(100, 2500).astype('f4'))
+        # self.vbo4 = ctx.buffer(np.array([[[-1,-1],[0,0]],[[-1,-2],[1,1]]]).astype('f4'))
+        self.vao4 = ctx.vertex_array(self.prog4, self.vbo4, 'in_vert')
+
+        # Shaders & Program
+
+        self.prog2 = self.ctx.program(
+            vertex_shader=Path('shaders/text.vert').read_text(),
+            fragment_shader=Path('shaders/text.frag').read_text()
+        )
+
+    def distancetext(self, stri):
         # Opening JSON file
         f = open('msdf_gen/fonts.json')
         # returns JSON object as # a dictionary
@@ -178,7 +100,7 @@ class HelloWorld2D:
                         sr=dd['right']/wi
                         tt=dd['top']/he
                         tb=dd['bottom']/he
-              
+            
                         sc = 0.07
 
                         ob = [
@@ -199,30 +121,11 @@ class HelloWorld2D:
                         arr.append(ob)
             return arr
 
-
-
-
-        # Buffer
-        # xx=np.array([
-        #     -0.5, -0.5, 0.0, 1.0,  # Vertex 0, s,t
-        #     0.5, -0.5, 1.0, 1.0,   # Vertex 1
-        #     0.5, 0.5,  1.0, 0.0,   # Vertex 2
-        #     -0.5, 0.5, 0.0, 0.0,   # Vertex 3
-
-        #     0.5, -0.5, 0.0, 1.0,  # Vertex 4, s,t
-        #     1.5, -0.5, 1.0, 1.0,   # Vertex 5
-        #     1.5, 0.5,  1.0, 0.0,   # Vertex 6
-        #     0.5, 0.5, 0.0, 0.0,   # Vertex 7
-        # ])
-
-        vertices=np.array([ txt2vtx('12734.98234cm') ])
-        self.vbo3 = ctx.buffer(vertices.astype('f4'))
-
-        # print(xx)
-
+        vertices = np.array([ txt2vtx(stri) ])
+        
+        self.vbo3 = self.ctx.buffer(vertices.astype('f4'))
 
         # Put everything together
-
 
         # Indices pattern for a single rectangle
         rectangle_pattern = np.array([0, 1, 2,  0, 2, 3], dtype='i4')
@@ -239,17 +142,13 @@ class HelloWorld2D:
         self.vao3 = self.ctx.vertex_array(self.prog2, [(self.vbo3, '2f 2f', 'in_vert', 'tex_coord')], self.ibo)
 
 
-
-
-
         # self.vao3 = ctx.vertex_array(self.prog2, self.vbo3, 'in_vert')
 
         # Texture
 
         img = Image.open(os.path.join(os.path.dirname(__file__), 'msdf_gen/fonts.bmp')).convert('RGB')
-        texture = ctx.texture(img.size, 3, img.tobytes())
+        texture = self.ctx.texture(img.size, 3, img.tobytes())
         texture.use()
-
 
         # Opening the binary file in binary mode as rb(read binary)
         # f = open('msdf_gen/fonts.binfloat', mode="rb")
@@ -257,36 +156,40 @@ class HelloWorld2D:
         # f.close()
         # texture = ctx.texture((148,148), 4, img, dtype='f4')
         # texture.use()
+        self.vao3.render()
 
 
-        
-
-
-    def chcol (self,col):
-        self.prog['zz'].value=col
-
-    def kuku(self, pts):
-        # print('press')
+    def linerender(self, pts, zf):
         
         data = pts.astype('f4').tobytes()
         self.vbo.orphan()
         self.vbo.write(data)
-        self.ctx.line_width = 2
-        self.ctx.point_size = 5.0
-        self.vao.render(moderngl.LINE_STRIP, vertices=len(data) // 2)
-       
-        # print('here')
-        # for i in range(0, 2):
-            # self.vao3.render(moderngl.TRIANGLE_FAN, first=i*4, vertices=4)
+        self.ctx.line_width = 4
+        # self.ctx.point_size = 5.0
+        self.vao.render(moderngl.LINES)
         
-        # Render all instances of the square
-        self.vao3.render()
+        # print(date)
 
 
-    def dodo(self, pts):
+        windw=self.ctx.viewport[2]
+        windh=self.ctx.viewport[3]
+        f5=512*zf #self.zomf
+
+        proj = Matrix44.orthogonal_projection(-windw/f5, windw/f5, windh/f5, -windh/f5, 0.1, 1000.0)
+        lookat = Matrix44.look_at(
+            (self.ppp[0], self.ppp[1], -1.0),
+            (self.ppp[0], self.ppp[1], 0.0),
+            (0.0, -1.0, 0),
+        )
+        # print(self.zomf)
+
+        self.mvp.write((proj * lookat).astype('f4'))
+        self.mvp1.write((proj * lookat).astype('f4'))
+        self.vao4.render(moderngl.LINES)
+
+    def circl(self, pts):
         data2 = pts.astype('f4').tobytes()
         # self.vbo2.orphan()
-        
 
         for i in range(0, len(pts)):
             self.vbo2.orphan()
@@ -297,7 +200,8 @@ class HelloWorld2D:
         # print(len(pts))
 
     def zom(self, z):
-        self.prog['Zoo'].value = z
+        # self.prog['Zoo'].value = z
+        self.zomf=z
         # pass
 
     def mp(self, po):
@@ -305,7 +209,8 @@ class HelloWorld2D:
         pass
     
     def pan(self, pos):
-        self.prog['Pan'].value = pos
+        # self.prog['Pan'].value = pos
+        self.ppp=pos
         # pass
 
     def clear(self, color=(0.0, .1, 0.1, 0)):
@@ -316,23 +221,6 @@ class HelloWorld2D:
         self.ctx.enable(moderngl.BLEND)
 
         self.ctx.clear(*color)
-
-    
-    def plot(self, points, type='line'):
-        data = points.astype('f4').tobytes()
-        self.vbo.orphan()
-        self.vbo.write(data)
-        if type == 'line':
-            self.ctx.line_width = 1
-            self.vao.render(moderngl.LINE_STRIP, vertices=len(data) // 24)
-        if type == 'points':
-            self.ctx.point_size = 3.0
-            self.vao.render(moderngl.POINTS, vertices=len(data) // 24)
-
-    def mcoord(self, x,y):
-        # print(x,y)
-        pass
-
 
 
 class PanTool:
