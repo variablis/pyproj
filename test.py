@@ -25,6 +25,7 @@ class Point:
     def __init__(self, x, y):
         self.x = x
         self.y = y
+        self.xy = [x,y]
 
     def get(self):
         return [self.x, self.y]
@@ -33,13 +34,14 @@ class LineData:
     idx=0
     lines = []
     buffer = []
-    newbuffer = []
+    # activebuffer = []
 
-    def __init__(self, point1, point2, distance=0.0, angle=0.0, visibility=1, layer=1, color=[1,1,1,1], constraints={}):
+    def __init__(self, point, point1=0, point2=0, distance=0.0, angle=0.0, visibility=1, layer=1, color=[1,1,1,1], constraints={}):
         self.line_id = self.idx
         self.visibility = visibility
         self.layer = layer
         self.color = color
+        self.point = point
         self.point1 = point1
         self.point2 = point2
         self.distance = distance
@@ -57,60 +59,61 @@ class LineData:
     def linemove(self):
         actline = self.lines[self.line_id]
 
-        p1orig = Point(actline.point1[0], actline.point1[1])
-        p2orig = Point(actline.point2[0], actline.point2[1])
+        p1orig = actline.point[0]
+        p2orig = actline.point[1]
+
+        # kapec p1orig nav point klasae??
+        # print(p1orig)
 
         # Calculate the change in mouse position
         delta_x = self.mousepos.x - self.prev_mousepos.x
         delta_y = self.mousepos.y - self.prev_mousepos.y
 
-        actline.point1[0] = p1orig.x+delta_x
-        actline.point1[1] = p1orig.y+delta_y
-
-        actline.point2[0] = p2orig.x+delta_x
-        actline.point2[1] = p2orig.y+delta_y
+        actline.point[0] = [p1orig[0]+delta_x, p1orig[1]+delta_y]
+        actline.point[1] = [p2orig[0]+delta_x, p2orig[1]+delta_y]
 
         # Update the previous mouse position
         self.prev_mousepos = self.mousepos
 
+    def pointmove(self, ptid):
+        actline = self.lines[self.line_id]
+        porig = actline.point[ptid]
+
+        # Calculate the change in mouse position
+        delta_x = self.mousepos.x - self.prev_mousepos.x
+        delta_y = self.mousepos.y - self.prev_mousepos.y
+
+        # print([porig[ptid]])
+
+        actline.point[ptid] = [ self.mousepos.x,  self.mousepos.y]
     
     @classmethod
     def startline(cls, startpoint):
-        cls.lines.append(cls(startpoint, startpoint))
+        cls.lines.append(cls([startpoint, startpoint]))
         cls.idx +=1
         # print(cls.lines)
 
     @classmethod
     def livepoint(cls, livepoint):
         if cls.lines:
-            cls.lines[-1].point2 = livepoint
+            cls.lines[-1].point[1] = livepoint
         # pass
 
     @classmethod
     def add(cls, endpoint, distance=0.0, angle=0.0, visibility=1, layer=1, color=[1,1,1,1], constraints={}):
-    # def add(cls, point1, point2, distance=0.0, angle=0.0, visibility=1, layer=1, color=[1,1,1,1], constraints={}):
-        # cls.lines.append(cls(point1, point2, distance, angle, visibility, layer, color, constraints))
 
         if cls.lines:
-            cls.lines[-1].point2 = endpoint
+            cls.lines[-1].point[1] = endpoint.xy
             cls.lines[-1].color = color
 
             # buf = cls.buffer
-            cls.buffer.append([ cls.lines[-1].point1 + cls.lines[-1].color , cls.lines[-1].point2 + cls.lines[-1].color ])
+            cls.buffer.append([ cls.lines[-1].point[0] + cls.lines[-1].color , cls.lines[-1].point[1] + cls.lines[-1].color ])
             # cls.buffer = buf
 
     @classmethod
     def getData(cls):
         return cls.lines
     
-    # @classmethod
-    # def updateBuffer(cls):
-    #     tmp_list = []
-    #     for elem in cls.lines:
-    #         tmp_list.append([ elem.point1 + elem.color , elem.point2 + elem.color ])
-
-    #     print(cls.buffer)
-    #     cls.buffer=tmp_list 
 
     @classmethod
     def makeBuffer(cls):
@@ -118,21 +121,21 @@ class LineData:
         tmp_list = []
         # buf = cls.buffer
         for elem in cls.lines:
-            tmp_list.append([ elem.point1 + elem.color , elem.point2 + elem.color ])
+            tmp_list.append([ elem.point[0] + elem.color , elem.point[1] + elem.color ])
 
         # cls.buffer = tmp
-        cls.newbuffer = tmp_list
+        # cls.activebuffer = tmp_list
         # print(tmp_list)
-        return np.array(cls.newbuffer)
+        return np.array(tmp_list)
 
     @classmethod
     def printData(cls):
         for elem in cls.lines:
-            print(f"Line ID: {elem.line_id}, Point1: {elem.point1}, Point2: {elem.point2}, color: {elem.color}")
+            print(f"Line ID: {elem.line_id}, Point1: {elem.point[0]}, Point2: {elem.point[1]}, color: {elem.color}")
 
     @classmethod
-    def printNewBuffer(cls):
-        print(cls.newbuffer)
+    def printBuffer(cls):
+        print(cls.buffer)
 
 
 class LineSegment:
@@ -170,7 +173,7 @@ class LineSegment:
                 print('segment done')
                 # LineData.add([self.startcx, self.startcy], [self.endcx, self.endcy], distance=self.distance, angle=self.degrees)
                 # janofikse beigu punkts tikai
-                LineData.add([self.endcx, self.endcy], distance=self.distance, angle=self.degrees)
+                LineData.add(Point(self.endcx, self.endcy), distance=self.distance, angle=self.degrees)
                 # verts = np.concatenate((verts, self.myvert), axis=0)
             else:
                 # print("not end")
@@ -267,8 +270,8 @@ def checkpoint(mouse_pt, wsize, zf):
     cy = (-mouse_pt.y*2 +1*sh+pan_tool.value[1])
 
     for d in LineData.getData():
-        a_pt = d.point1
-        b_pt = d.point2
+        a_pt = d.point[0]
+        b_pt = d.point[1]
         
         if not d.selected:
             d.color = [1,1,1,1]
@@ -286,8 +289,8 @@ def checkclickedpoint(mouse_pt, wsize, zf):
     cy = (-mouse_pt.y*2 +1*sh+pan_tool.value[1])
 
     for d in LineData.getData():
-        a_pt = d.point1
-        b_pt = d.point2
+        a_pt = d.point[0]
+        b_pt = d.point[1]
         # d.color = [1,1,1,1]
 
         if point_on_line(Point(cx,cy), a_pt, b_pt):
@@ -304,8 +307,8 @@ def check_dr_point(drag_start_pt, wsize, zf):
     cy = (-drag_start_pt.y*2 +1*sh+pan_tool.value[1])
 
     for d in LineData.getData():
-        a_pt = d.point1
-        b_pt = d.point2
+        a_pt = d.point[0]
+        b_pt = d.point[1]
 
         if point_on_line(Point(cx,cy), a_pt, b_pt):
             # d.color = [.5,.5,.1,1]
@@ -324,8 +327,8 @@ def linedrag(mouse_pt, wsize, zf):
         if d.drag:
             d.mousepos =  Point(cx,cy)
             # d.mpprint()
-            d.linemove()
-    # LineData.updateBuffer()
+            # d.linemove()
+            d.pointmove(1)
 
 
 def linestopdrag(mouse_pt, wsize, zf):
@@ -434,11 +437,13 @@ class MyWidget(ModernGLWidget):
             else:
                 checkclickedpoint(self.mycoord(), (self.size().width(), self.size().height()), self.zfakt)
 
+                # stulbs workarounds lai izslegtu selekcibju bez peles  kustinasanas
+                checkpoint(self.mycoord(), (self.size().width(), self.size().height()), self.zfakt)
                 # Store the initial mouse position for drag calculation
                 global uds
                 self.user_drag_start = self.mycoord()
                 uds = self.user_drag_start
-
+       
         self.update()
 
     def mouseMoveEvent(self, event):
@@ -459,14 +464,12 @@ class MyWidget(ModernGLWidget):
                 uds = self.user_drag_start 
 
         if self.createlineactive:
-            # l.createpoints(self.mycoord(), self.clickcount, self.size(), pan_tool.value, self.zfakt)
             lseg.updatepoints(self.mycoord(), self.clickcount, self.size(), pan_tool.value, self.zfakt)
         else:
             checkpoint(self.mycoord(), (self.size().width(), self.size().height()), self.zfakt)
             linedrag(self.mycoord(), (self.size().width(), self.size().height()), self.zfakt)
             
 
-        # LineData.updateBuffer()
         self.update()
         self.render()
 
