@@ -233,19 +233,19 @@ class PanTool:
         self.delta_y = 0.0
         self.drag = False
 
-    def start_drag(self, x, y):
-        self.start_x = x
-        self.start_y = y
+    def start_drag(self, point):
+        self.start_x = point.x
+        self.start_y = point.y
         self.drag = True
 
-    def dragging(self, x, y):
+    def dragging(self, point):
         if self.drag:
-            self.delta_x = (x - self.start_x) * 2.0
-            self.delta_y = (y - self.start_y) * 2.0
+            self.delta_x = (point.x - self.start_x) * 2.0
+            self.delta_y = (point.y - self.start_y) * 2.0
 
-    def stop_drag(self, x, y):
+    def stop_drag(self, point):
         if self.drag:
-            self.dragging(x, y)
+            self.dragging(point)
             self.total_x -= self.delta_x
             self.total_y += self.delta_y
             self.delta_x = 0.0
