@@ -27,6 +27,15 @@ class Point:
         self.y = y
         self.xy = [x,y]
 
+    def __sub__(self, other_point):
+        """Overloaded subtraction operator for Point instances."""
+        return Point(self.x - other_point.x, self.y - other_point.y)
+    
+    def __add__(self, other_point):
+        """Overloaded addition operator for Point instances."""
+        return Point(self.x + other_point.x, self.y + other_point.y)
+
+
     def get(self):
         return [self.x, self.y]
 
@@ -36,12 +45,12 @@ class LineData:
     buffer = []
     # activebuffer = []
 
-    def __init__(self, point, point1=0, point2=0, distance=0.0, angle=0.0, visibility=1, layer=1, color=[1,1,1,1], constraints={}):
+    def __init__(self, point=[], point1=0, point2=0, distance=0.0, angle=0.0, visibility=1, layer=1, color=[1,1,1,1], constraints={}):
         self.line_id = self.idx
         self.visibility = visibility
         self.layer = layer
         self.color = color
-        self.point = point
+        self.point = point #masivs ar punktiem
         self.point1 = point1
         self.point2 = point2
         self.distance = distance
@@ -52,6 +61,8 @@ class LineData:
         self.drag=False
         self.mousepos=None
         self.prev_mousepos=None
+        
+        self.dragobj=-1
 
     def mpprint(self):
         print("inf:", self.line_id, self.mousepos.get(), self.drag)
@@ -77,19 +88,42 @@ class LineData:
 
     def pointmove(self, ptid):
         actline = self.lines[self.line_id]
-        porig = actline.point[ptid]
 
-        # Calculate the change in mouse position
-        delta_x = self.mousepos.x - self.prev_mousepos.x
-        delta_y = self.mousepos.y - self.prev_mousepos.y
+        if ptid==0 or ptid==1:
 
-        # print([porig[ptid]])
+            porig = actline.point[ptid]
 
-        actline.point[ptid] = [ self.mousepos.x,  self.mousepos.y]
+            # Calculate the change in mouse position
+            delta_x = self.mousepos.x - self.prev_mousepos.x
+            delta_y = self.mousepos.y - self.prev_mousepos.y
+
+            # print([porig[ptid]])
+
+            # actline.point[ptid] = [ porig[0]+delta_x, porig[1]+delta_y] #tiek saglabats ofsets ko mes negroibam
+            actline.point[ptid] = self.mousepos
+
+        if ptid==2:
+            p1orig = actline.point[0]
+            p2orig = actline.point[1]
+
+            # kapec p1orig nav point klasae??
+            # print(p1orig)
+
+            # Calculate the change in mouse position
+            delta_x = self.mousepos.x - self.prev_mousepos.x
+            delta_y = self.mousepos.y - self.prev_mousepos.y
+
+            delta = Point(delta_x, delta_y)
+
+            actline.point[0] = p1orig + delta
+            actline.point[1] = p2orig + delta
+
+        # Update the previous mouse position
+        self.prev_mousepos = self.mousepos
     
     @classmethod
     def startline(cls, startpoint):
-        cls.lines.append(cls([startpoint, startpoint]))
+        cls.lines.append(cls( [startpoint, startpoint] ))
         cls.idx +=1
         # print(cls.lines)
 
@@ -103,11 +137,11 @@ class LineData:
     def add(cls, endpoint, distance=0.0, angle=0.0, visibility=1, layer=1, color=[1,1,1,1], constraints={}):
 
         if cls.lines:
-            cls.lines[-1].point[1] = endpoint.xy
+            cls.lines[-1].point[1] = endpoint
             cls.lines[-1].color = color
 
             # buf = cls.buffer
-            cls.buffer.append([ cls.lines[-1].point[0] + cls.lines[-1].color , cls.lines[-1].point[1] + cls.lines[-1].color ])
+            cls.buffer.append([ cls.lines[-1].point[0].xy + cls.lines[-1].color , cls.lines[-1].point[1].xy + cls.lines[-1].color ])
             # cls.buffer = buf
 
     @classmethod
@@ -121,7 +155,7 @@ class LineData:
         tmp_list = []
         # buf = cls.buffer
         for elem in cls.lines:
-            tmp_list.append([ elem.point[0] + elem.color , elem.point[1] + elem.color ])
+            tmp_list.append([ elem.point[0].xy + elem.color , elem.point[1].xy + elem.color ])
 
         # cls.buffer = tmp
         # cls.activebuffer = tmp_list
@@ -187,7 +221,7 @@ class LineSegment:
         cy =(-mp.y*2 +1*sh+pan[1])
 
         if clicks %2:
-            LineData.livepoint([cx, cy])
+            LineData.livepoint(Point(cx, cy))
 
             p1=Point(self.startcx, self.startcy)
             p2=Point(cx, cy)
@@ -223,7 +257,7 @@ class LineSegment:
         # liveverts = np.concatenate((verts, self.myvert), axis=0)
 
         if not clicks %2:
-            LineData.startline([self.startcx, self.startcy])
+            LineData.startline(Point(self.startcx, self.startcy))
         
 
         livecircles = circles + [self.mycircle]
@@ -246,12 +280,23 @@ def angle2points(p1, p2):
     # Ensure the angle is in the range [0, 360) degrees
     return (angle_deg + 360) % 360
 
-def point_on_line(mouse_pt, a_pt, b_pt, precision=0.035):
+def point_on_line(mouse_pt, a_pt, b_pt, precision=0.035, endpoint_threshold=0.05):
     # Check if the mouse point is on the line segment defined by a_pt and b_pt
 
     # Vectors from line start to mouse point and along the line segment
-    ap = np.array([mouse_pt.x - a_pt[0], mouse_pt.y - a_pt[1]])
-    ab = np.array([b_pt[0] - a_pt[0], b_pt[1] - a_pt[1]])
+    ap = np.array((mouse_pt - a_pt).xy)
+    ab = np.array((b_pt - a_pt).xy)
+
+    # Check if the mouse point is close to one of the endpoints
+    dist_to_a = np.linalg.norm((a_pt - mouse_pt).xy)
+    dist_to_b = np.linalg.norm((b_pt - mouse_pt).xy)
+
+
+    if dist_to_a < endpoint_threshold:
+        return True, 0  # Mouse point is close to the first endpoint
+
+    if dist_to_b < endpoint_threshold:
+        return True, 1  # Mouse point is close to the second endpoint
 
     # Dot products
     dot_ap_ab = np.dot(ap, ab)
@@ -259,9 +304,11 @@ def point_on_line(mouse_pt, a_pt, b_pt, precision=0.035):
 
     # Check if the mouse point is close enough to the line segment
     if 0 <= dot_ap_ab <= dot_ab_ab and abs(np.cross(ap, ab)) < precision:
-        return True  # Mouse point is on the line segment
-    else:
-        return False  # Mouse point is not on the line segment
+        return True, 2  # Mouse point is on the line segment
+    
+    
+    return False, None # Mouse point is not on the line segment
+
 
 def checkpoint(mouse_pt, wsize, zf):
     sw = wsize[0]/512/zf
@@ -276,10 +323,23 @@ def checkpoint(mouse_pt, wsize, zf):
         if not d.selected:
             d.color = [1,1,1,1]
 
-        if point_on_line(Point(cx,cy), a_pt, b_pt):
+        test = point_on_line(Point(cx,cy), a_pt, b_pt)
+
+        if test[0]:
             if not d.selected:
                 d.color = [1,0,1,1]
-            # print(d.line_id)
+            # if test[1] == 0:
+            #     # print('nulle')
+            #     pass
+
+            # elif test[1] == 1:
+            #     # print('vienns')
+            #     pass
+
+            # elif test[1] == 2:
+            #     if not d.selected:
+            #         d.color = [1,0,1,1]
+                # print(d.line_id)
 
 uds=None
 def checkclickedpoint(mouse_pt, wsize, zf):
@@ -293,7 +353,8 @@ def checkclickedpoint(mouse_pt, wsize, zf):
         b_pt = d.point[1]
         # d.color = [1,1,1,1]
 
-        if point_on_line(Point(cx,cy), a_pt, b_pt):
+        test = point_on_line(Point(cx,cy), a_pt, b_pt)
+        if test[0]:
             d.color = [0,1,.3,1]
             d.selected=True
         else:
@@ -310,11 +371,29 @@ def check_dr_point(drag_start_pt, wsize, zf):
         a_pt = d.point[0]
         b_pt = d.point[1]
 
-        if point_on_line(Point(cx,cy), a_pt, b_pt):
-            # d.color = [.5,.5,.1,1]
-            print("line drag start")
+        test = point_on_line(Point(cx,cy), a_pt, b_pt)
+
+        # if point_on_line(Point(cx,cy), a_pt, b_pt):
+        #     # print("line drag start")
+        #     d.drag=True
+        #     d.mousepos = d.prev_mousepos = Point(cx,cy)
+
+        if test[0]==True:
             d.drag=True
             d.mousepos = d.prev_mousepos = Point(cx,cy)
+
+            if test[1] == 0:
+                d.dragobj=0
+
+            elif test[1] == 1:
+                # print('vienns')
+                d.dragobj=1
+
+            elif test[1] == 2:
+                d.dragobj=2
+        else:
+            d.dragobj=-1
+                
 
 
 def linedrag(mouse_pt, wsize, zf):
@@ -328,7 +407,8 @@ def linedrag(mouse_pt, wsize, zf):
             d.mousepos =  Point(cx,cy)
             # d.mpprint()
             # d.linemove()
-            d.pointmove(1)
+            # print(d.dragobj)
+            d.pointmove(d.dragobj)
 
 
 def linestopdrag(mouse_pt, wsize, zf):

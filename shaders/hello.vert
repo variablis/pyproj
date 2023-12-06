@@ -1,5 +1,7 @@
 #version 330
 
+
+
 // uniform vec2 Pan;
 //uniform float zz;
 // uniform float Zoo;
@@ -11,7 +13,14 @@ in vec4 in_color;
 
 out vec4 v_color;
 
+
 void main() {
+
+
+
+    //  Mvp * vec4(in_vert, 0.0, 1.0);
+
+
     // vec3 eye = vec3(0,0, -3);
     // vec3 center = vec3(0,0, 0.0);
     // vec3 up = vec3(0.0, 1.0, 0.0);
@@ -54,4 +63,5 @@ void main() {
     // Set the transformed position
     // gl_Position = proj* view * vec4(in_vert, 0.0, 1.0);
     gl_Position = Mvp * vec4(in_vert, 0.0, 1.0);
+
 }

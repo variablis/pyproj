@@ -29,10 +29,13 @@ class HelloWorld2D:
 
         self.prog = self.ctx.program(
             vertex_shader=Path('shaders/hello.vert').read_text(),
+            # geometry_shader=Path('shaders/hello.geom').read_text(),
             fragment_shader=Path('shaders/hello.frag').read_text()
         )
 
         self.mvp1 = self.prog['Mvp']
+        self.prog["thickness"].value = 2.5
+
         self.vbo = ctx.buffer(reserve='4MB', dynamic=True)
         self.vao = ctx.vertex_array(self.prog, self.vbo, 'in_vert', 'in_color')
 
@@ -164,9 +167,16 @@ class HelloWorld2D:
         data = pts.astype('f4').tobytes()
         self.vbo.orphan()
         self.vbo.write(data)
-        self.ctx.line_width = 4
+        self.ctx.line_width = 6.0
         # self.ctx.point_size = 5.0
-        self.vao.render(moderngl.LINES)
+        # self.vao.render(moderngl.LINES)
+        
+        self.vao.render()
+        # for i in range(0, len(pts)):
+        #     self.vbo.orphan()
+        #     self.vbo.write(data)
+
+        #     self.vao.render(moderngl.TRIANGLE_STRIP, first=i*4, vertices=4)
         
         # print(date)
 
