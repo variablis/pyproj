@@ -29,12 +29,12 @@ class LineData:
     lines = []
     # buffer = []
 
-    def __init__(self, point=[], point1=0, point2=0, distance=0.0, angle=0.0, visibility=1, layer=1, color=[1,1,1,1], constraints={}):
+    def __init__(self, points=[], point1=0, point2=0, distance=0.011, angle=0.0, visibility=1, layer=1, color=[1,1,1,1], constraints={}):
         self.line_id = self.idx
         self.visibility = visibility
         self.layer = layer
         self.color = color
-        self.point = point #masivs ar punktiem
+        self.points = points #masivs ar punktiem
         self.point1 = point1
         self.point2 = point2
         self.distance = distance
@@ -55,8 +55,8 @@ class LineData:
     def linemove(self):
         actline = self.lines[self.line_id]
 
-        p1orig = actline.point[0]
-        p2orig = actline.point[1]
+        p1orig = actline.points[0]
+        p2orig = actline.points[1]
 
         # kapec p1orig nav point klasae??
         # print(p1orig)
@@ -65,8 +65,8 @@ class LineData:
         delta_x = self.mousepos.x - self.prev_mousepos.x
         delta_y = self.mousepos.y - self.prev_mousepos.y
 
-        actline.point[0] = [p1orig[0]+delta_x, p1orig[1]+delta_y]
-        actline.point[1] = [p2orig[0]+delta_x, p2orig[1]+delta_y]
+        actline.points[0] = [p1orig[0]+delta_x, p1orig[1]+delta_y]
+        actline.points[1] = [p2orig[0]+delta_x, p2orig[1]+delta_y]
 
         # Update the previous mouse position
         self.prev_mousepos = self.mousepos
@@ -74,9 +74,12 @@ class LineData:
     def pointmove(self, ptid):
         actline = self.lines[self.line_id]
 
+        actline.distance = distance2points(actline.points[0], actline.points[1])
+        actline.degrees = angle2points(actline.points[0], actline.points[1])
+
         if ptid==0 or ptid==1:
 
-            porig = actline.point[ptid]
+            porig = actline.points[ptid]
 
             # Calculate the change in mouse position
             delta_x = self.mousepos.x - self.prev_mousepos.x
@@ -85,11 +88,11 @@ class LineData:
             # print([porig[ptid]])
 
             # actline.point[ptid] = [ porig[0]+delta_x, porig[1]+delta_y] #tiek saglabats ofsets ko mes negroibam
-            actline.point[ptid] = self.mousepos
+            actline.points[ptid] = self.mousepos
 
         if ptid==2:
-            p1orig = actline.point[0]
-            p2orig = actline.point[1]
+            p1orig = actline.points[0]
+            p2orig = actline.points[1]
 
             # kapec p1orig nav point klasae??
             # print(p1orig)
@@ -100,8 +103,8 @@ class LineData:
 
             delta = Point(delta_x, delta_y)
 
-            actline.point[0] = p1orig + delta
-            actline.point[1] = p2orig + delta
+            actline.points[0] = p1orig + delta
+            actline.points[1] = p2orig + delta
 
         # Update the previous mouse position
         self.prev_mousepos = self.mousepos
@@ -115,14 +118,14 @@ class LineData:
     @classmethod
     def livepoint(cls, livepoint):
         if cls.lines:
-            cls.lines[-1].point[1] = livepoint
+            cls.lines[-1].points[1] = livepoint
         # pass
 
     @classmethod
     def add(cls, endpoint, distance=0.0, angle=0.0, visibility=1, layer=1, color=[1,1,1,1], constraints={}):
 
         if cls.lines:
-            cls.lines[-1].point[1] = endpoint
+            cls.lines[-1].points[1] = endpoint
             cls.lines[-1].color = color
 
        
@@ -140,8 +143,8 @@ class LineData:
         tmp_list = []
         for elem in cls.lines:
             tmp_list.append([ 
-                elem.point[0].xy + elem.color,
-                elem.point[1].xy + elem.color
+                elem.points[0].xy + elem.color,
+                elem.points[1].xy + elem.color
             ])
 
         # print(tmp_list)
@@ -150,7 +153,7 @@ class LineData:
     @classmethod
     def printData(cls):
         for elem in cls.lines:
-            print(f"Line ID: {elem.line_id}, Point1: {elem.point[0]}, Point2: {elem.point[1]}, color: {elem.color}")
+            print(f"Line ID: {elem.line_id}, Point1: {elem.points[0]}, Point2: {elem.points[1]}, color: {elem.color}")
 
     # @classmethod
     # def printBuffer(cls):
@@ -211,7 +214,7 @@ class LineSegment:
         if clicks %2:
             LineData.livepoint(Point(cx, cy))
 
-            TextData.update(f'{round(self.distance,4):.4f}', Point(cx, cy))
+            TextData.update(f'{round(self.distance,4):.4f} {round(self.degrees,2):.2f}°', Point(cx, cy))
 
             p1=self.startpoint
             p2=Point(cx, cy)
@@ -278,46 +281,51 @@ class TextData:
         self.vtx=self.txt2vtx()
 
     def txt2vtx(self):
-        wi = he = 256
+        image = (256, 256)
         arr=[]
         for i,s in enumerate(self.str):
-            for glyph in self.fdata.get("glyphs", []):
-                if glyph.get("unicode") == ord(s):
-                    dd = glyph.get("atlasBounds", {})
-                    pb = glyph.get("planeBounds", {})
+            addspace = 0.0
+            if s==' ':
+                addspace = 0.5
+            else:
+                for glyph in self.fdata.get("glyphs", []):
+                    if glyph.get("unicode") == ord(s):
+                        dd = glyph.get("atlasBounds", {})
+                        pb = glyph.get("planeBounds", {})
 
-                    xl=pb['left']
-                    xr=pb['right']
-                    yt=pb['top']
-                    yb=pb['bottom']
+                        sc = 0.06
 
-                    sl=dd['left']/wi
-                    sr=dd['right']/wi
-                    tt=dd['top']/he
-                    tb=dd['bottom']/he
-        
-                    sc = 0.07
+                        xl=(pb['left']+i*.5)*sc
+                        xr=(pb['right']+i*.5)*sc
+                        yt=pb['top']*sc
+                        yb=pb['bottom']*sc
 
-                    if not self.offset:
-                        self.offset = Point(0,0)
-                    # xy uv
-                    ob = [
-                        # -0.5, -0.5, 0.0, 1.0,
-                        # 0.5, -0.5, 1.0, 1.0, 
-                        # 0.5, 0.5,  1.0, 0.0, 
-                        # -0.5, 0.5, 0.0, 0.0, 
+                        sl=dd['left']/image[0]
+                        sr=dd['right']/image[0]
+                        tt=1-dd['top']/image[1]
+                        tb=1-dd['bottom']/image[1]
+                        
 
-                        ((xl+i*.5)*sc)+self.offset.x, (yb*sc)+self.offset.y, sl, 1-tb,
-                        ((xr+i*.5)*sc)+self.offset.x, (yb*sc)+self.offset.y, sr, 1-tb, 
-                        ((xr+i*.5)*sc)+self.offset.x, (yt*sc)+self.offset.y, sr, 1-tt, 
-                        ((xl+i*.5)*sc)+self.offset.x, (yt*sc)+self.offset.y, sl, 1-tt, 
-                    ]
+                        if not self.offset:
+                            self.offset = Point(0,0)
+                        # xy uv
+                        ob = [
+                            # -0.5, -0.5, 0.0, 1.0,
+                            # 0.5, -0.5, 1.0, 1.0, 
+                            # 0.5, 0.5,  1.0, 0.0, 
+                            # -0.5, 0.5, 0.0, 0.0, 
 
-                    # print(offset.xy)
-                    # print(ob)
-                    # print(ord(s))
+                            xl +addspace+ self.offset.x, yb + self.offset.y, sl, tb,
+                            xr +addspace+ self.offset.x, yb + self.offset.y, sr, tb, 
+                            xr +addspace+ self.offset.x, yt + self.offset.y, sr, tt, 
+                            xl +addspace+ self.offset.x, yt + self.offset.y, sl, tt, 
+                        ]
 
-                    arr.append(ob)
+                        # print(offset.xy)
+                        # print(ob)
+                        # print(ord(s))
+
+                        arr.append(ob)
         return arr
 
     @classmethod
@@ -326,10 +334,13 @@ class TextData:
         # print(cls.texts)
 
     @classmethod
-    def update(cls, str, offset):
+    def update(cls, str, offset, idx=-1):
         if cls.texts:
-            cls.texts[-1] = cls(str, offset)
+            cls.texts[idx] = cls(str, offset)
 
+    # @classmethod
+    # def getElem(cls, idx):
+    #     return cls.texts[idx]
 
     @classmethod
     def makeBuffer(cls):
@@ -355,34 +366,40 @@ class TextData:
 
 
 def distance2points(p1, p2):
-    point1 = np.array([p1.x, p1.y])
-    point2 = np.array([p2.x, p2.y])
+    point1 = np.array(p1.xy)
+    point2 = np.array(p2.xy)
     vector = point2 - point1
     # Calculate the Euclidean distance between the two points
-    return np.linalg.norm(vector)
+
+    return math.dist(p2.xy, p1.xy)
+    # return np.linalg.norm(vector)
 
 
 def angle2points(p1, p2):
-    point1 = np.array([p1.x, p1.y])
-    point2 = np.array([p2.x, p2.y])
-    vector = point2 - point1
-    # Calculate the angle in radians
-    angle_rad = np.arctan2(vector[1], vector[0])
-    # Convert the angle to degrees if needed
-    angle_deg = np.degrees(angle_rad)
-    # Ensure the angle is in the range [0, 360) degrees
-    return (angle_deg + 360) % 360
+    # point1 = np.array(p1.xy)
+    # point2 = np.array(p2.xy)
+    # vector = point2 - point1
+    # # Calculate the angle in radians
+    # angle_rad = np.arctan2(vector[1], vector[0])
+    # # Convert the angle to degrees if needed
+    # angle_deg = np.degrees(angle_rad)
+    # # Ensure the angle is in the range [0, 360) degrees
+    # return (angle_deg + 360) % 360
+
+    vector = p2-p1
+    rad = math.atan2(vector.y, vector.x)
+
+    return math.degrees(rad)%360
 
 def point_on_line(mouse_pt, a_pt, b_pt, precision=0.035, endpoint_threshold=0.05):
     # Check if the mouse point is on the line segment defined by a_pt and b_pt
 
-    # Vectors from line start to mouse point and along the line segment
-    ap = np.array((mouse_pt - a_pt).xy)
-    ab = np.array((b_pt - a_pt).xy)
-
     # Check if the mouse point is close to one of the endpoints
-    dist_to_a = np.linalg.norm((a_pt - mouse_pt).xy)
-    dist_to_b = np.linalg.norm((b_pt - mouse_pt).xy)
+    # dist_to_a = np.linalg.norm((a_pt - mouse_pt).xy)
+    # dist_to_b = np.linalg.norm((b_pt - mouse_pt).xy)
+
+    dist_to_a = math.dist(a_pt.xy, mouse_pt.xy)
+    dist_to_b = math.dist(b_pt.xy, mouse_pt.xy)
 
 
     if dist_to_a < endpoint_threshold:
@@ -391,12 +408,19 @@ def point_on_line(mouse_pt, a_pt, b_pt, precision=0.035, endpoint_threshold=0.05
     if dist_to_b < endpoint_threshold:
         return True, 1  # Mouse point is close to the second endpoint
 
+    # Vectors from line start to mouse point and along the line segment
+    # ap = np.array((mouse_pt - a_pt).xy)
+    # ab = np.array((b_pt - a_pt).xy)
+    ap = mouse_pt - a_pt
+    ab = b_pt - a_pt
     # Dot products
-    dot_ap_ab = np.dot(ap, ab)
-    dot_ab_ab = np.dot(ab, ab)
+    # dot_ap_ab = np.dot(ap, ab)
+    # dot_ab_ab = np.dot(ab, ab)
+    dot_ap_ab = ap.dot2d(ab)
+    dot_ab_ab = ab.dot2d(ab)
 
     # Check if the mouse point is close enough to the line segment
-    if 0 <= dot_ap_ab <= dot_ab_ab and abs(np.cross(ap, ab)) < precision:
+    if 0 <= dot_ap_ab <= dot_ab_ab and abs(ap.cross2d(ab)) < precision:
         return True, 2  # Mouse point is on the line segment
     
     
@@ -410,8 +434,8 @@ def checkpoint(mouse_pt, wsize, zf):
     cy = (-mouse_pt.y*2 +1*sh+pan_tool.value[1])
 
     for d in LineData.getData():
-        a_pt = d.point[0]
-        b_pt = d.point[1]
+        a_pt = d.points[0]
+        b_pt = d.points[1]
         
         if not d.selected:
             d.color = [1,1,1,1]
@@ -442,8 +466,8 @@ def checkclickedpoint(mouse_pt, wsize, zf):
     cy = (-mouse_pt.y*2 +1*sh+pan_tool.value[1])
 
     for d in LineData.getData():
-        a_pt = d.point[0]
-        b_pt = d.point[1]
+        a_pt = d.points[0]
+        b_pt = d.points[1]
         # d.color = [1,1,1,1]
 
         test = point_on_line(Point(cx,cy), a_pt, b_pt)
@@ -461,8 +485,8 @@ def check_dr_point(drag_start_pt, wsize, zf):
     cy = (-drag_start_pt.y*2 +1*sh+pan_tool.value[1])
 
     for d in LineData.getData():
-        a_pt = d.point[0]
-        b_pt = d.point[1]
+        a_pt = d.points[0]
+        b_pt = d.points[1]
 
         test = point_on_line(Point(cx,cy), a_pt, b_pt)
 
@@ -503,6 +527,11 @@ def linedrag(mouse_pt, wsize, zf):
             # print(d.dragobj)
             d.pointmove(d.dragobj)
 
+            # update coresponding text element
+            TextData.update( f'{round(d.distance,4):.4f} {round(d.degrees,2):.2f}°', d.mousepos, d.line_id)
+
+           
+
 
 def linestopdrag(mouse_pt, wsize, zf):
     sw = wsize[0]/512/zf
@@ -520,8 +549,8 @@ def linestopdrag(mouse_pt, wsize, zf):
 
 
 
-verts = np.array([[0,0, 1,1,1,1],[0,0, 1,1,1,1]])
-liveverts =np.array([[0,0, 1,1,1,1],[0,0, 1,1,1,1]]) #verts+create line aktivais
+# verts = np.array([[0,0, 1,1,1,1],[0,0, 1,1,1,1]])
+# liveverts =np.array([[0,0, 1,1,1,1],[0,0, 1,1,1,1]]) #verts+create line aktivais
 
 pan_tool = PanTool()
 lseg = LineSegment()

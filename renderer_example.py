@@ -37,6 +37,7 @@ class HelloWorld2D:
         self.vbo = ctx.buffer(reserve='4MB', dynamic=True)
         self.vao = ctx.vertex_array(self.prog, [(self.vbo, '2f 4f', 'in_vert', 'in_color')])
         self.mvp1 = self.prog['mvp']
+        self.viewport = self.prog['viewportsize']
         # rectangle_pattern = np.array([0, 1, 2,  1, 2, 3], dtype='i4')
         # self.ibo2 = self.ctx.buffer(rectangle_pattern)
         # self.vao = ctx.vertex_array(self.prog, [(self.vbo, '2f 2f 2f 4f', 'in_vert', 'in_vert2', 'inluv', 'in_color')], self.ibo2)
@@ -90,6 +91,7 @@ class HelloWorld2D:
             vertex_shader=Path('shaders/text.vert').read_text(),
             fragment_shader=Path('shaders/text.frag').read_text()
         )
+        self.mvp3 = self.prog3['mvp']
 
         # vertices = np.array([ 
         #     -0.5, -0.5, 0.0, 1.0,
@@ -165,8 +167,6 @@ class HelloWorld2D:
 
             # self.vao3.transform(self.vbo2)
 
-            
-            # print("aaa")
          
             vaox.render()
 
@@ -213,7 +213,10 @@ class HelloWorld2D:
 
         self.mvp1.write((proj * lookat).astype('f4'))
         self.mvp2.write((proj * lookat).astype('f4'))
+        self.mvp3.write((proj * lookat).astype('f4'))
         self.mvp4.write((proj * lookat).astype('f4'))
+
+        self.viewport.write(np.array([windw, windh]).astype('f4'))
 
         self.vao4.render(moderngl.LINES)
 

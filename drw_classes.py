@@ -11,6 +11,12 @@ class Point:
     def __add__(self, other_point):
         """Overloaded addition operator for Point instances."""
         return Point(self.x + other_point.x, self.y + other_point.y)
+    
+    def dot2d(self, other_point):
+        return self.x*other_point.x + self.y*other_point.y
+    
+    def cross2d(self, other_point):
+        return self.x*other_point.y - self.y*other_point.x
 
 
     def get(self):
