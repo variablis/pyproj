@@ -1,9 +1,11 @@
+import typing
+from PyQt6 import QtGui
 import numpy as np
 import random
 import math
 
 from PyQt6.QtGui import QSurfaceFormat
-from PyQt6.QtWidgets import QApplication, QMainWindow, QToolBar, QVBoxLayout, QWidget,QLabel
+from PyQt6.QtWidgets import QApplication, QMainWindow, QToolBar, QFileDialog, QVBoxLayout, QWidget,QLabel
 from PyQt6.QtGui import QAction, QCursor, QIcon
 from PyQt6.QtCore import Qt, QTimer
 
@@ -12,6 +14,7 @@ from renderer_example import HelloWorld2D, PanTool
 
 from drw_classes import Point
 import json
+from pathlib import Path
 
 # geoobjects={
 # "segments": [
@@ -594,19 +597,19 @@ class MyWidget(ModernGLWidget):
         self.scene.clear()
 
         # self.scene.textgen(str(lseg.distance)+'...'+str(lseg.degrees), lseg.startpoint)
+        
+        self.scene.updateMvp(self.zfakt)
 
         self.scene.textrender(TextData.makeBuffer())
-        self.scene.linerender(LineData.makeBuffer(), self.zfakt)
+        self.scene.linerender(LineData.makeBuffer())
         # self.scene.circl(np.array(livecircles))
+        
 
     def mycoord(self):
         # origin ir main windowa kreisais augsejais sturis 0,0
         # pozicija tiek nolasita pa visu ekranu!!
         local_pos = self.mapFromGlobal(QCursor.pos())
-        # wsize=[
-        #     local_pos.x()/ 512/self.zfakt, #self.size().width(),
-        #     local_pos.y()/ 512/self.zfakt #self.size().height()
-        # ]
+ 
         mousepos = Point(local_pos.x()/ 512/self.zfakt, 
                          local_pos.y()/ 512/self.zfakt)
         return mousepos
@@ -616,11 +619,20 @@ class MyWidget(ModernGLWidget):
         self.clickcount=0
         lseg.toolactive(checked)
 
+
+    # def resizeEvent(self, event):
+        # print("resize")
+        # if self.scene:
+            # self.scene.updateMvp(self.zfakt)
+
         
     def wheelEvent(self, event):
         self.zoomy +=event.angleDelta().y()/120
         self.zfakt=pow(1.4, self.zoomy)
         self.scene.zom(self.zfakt)
+
+        # self.scene.updateMvp(self.zfakt)
+
         self.update()
         self.render()
         
@@ -695,6 +707,31 @@ class MyWidget(ModernGLWidget):
         self.update()
 
 
+    def newFile(self):
+        LineData.lines=[]
+        TextData.texts=[]
+        print('new file...')
+
+    def showFileDialog(self):
+        home_dir = str(Path.cwd())
+        fname = QFileDialog.getOpenFileName(self, 'Open file', home_dir)
+
+        if fname[0]:
+            f = open(fname[0], 'r')
+            data = f.read()
+            # self.textEdit.setText(data)
+            print(data)
+
+    def saveFile(self):
+        home_dir = str(Path.cwd())
+        fname = QFileDialog.getSaveFileName(self, 'Open file', home_dir, '*.drw')
+
+        if fname[0]:
+            f = open(fname[0], 'w')
+            f.write('faila saturs te')
+            print('save file...')
+
+
 def run_app():
     app = QApplication([])
 
@@ -713,25 +750,40 @@ def run_app():
     window.setGeometry(100, 100, 512, 512)
 
     toolbar = QToolBar()
-    window.addToolBar(toolbar)
+    toolbar2 = QToolBar()
+
+    tbtn_new_file = QAction(QIcon("img/paper.png"), "New", window)
+    tbtn_new_file.triggered.connect(mywidget.newFile)
+    toolbar.addAction(tbtn_new_file)
+
+    tbtn_open_file = QAction(QIcon("img/folder.png"), "Open", window)
+    tbtn_open_file.triggered.connect(mywidget.showFileDialog)
+    toolbar.addAction(tbtn_open_file)
+
+    tbtn_save_file = QAction(QIcon("img/diskete.png"), "Save", window)
+    tbtn_save_file.triggered.connect(mywidget.saveFile)
+    toolbar.addAction(tbtn_save_file)
 
     create_line = QAction("Create Line", window)
     create_line.setCheckable(True)
     create_line.toggled.connect(mywidget.createlinetool)
-    toolbar.addAction(create_line)
+    toolbar2.addAction(create_line)
 
     join_dots = QAction("Join Dots", window)
     # join_dots.triggered.connect()
-    toolbar.addAction(join_dots)
+    toolbar2.addAction(join_dots)
 
     toggle_line = QAction("Toggle lines", window)
     # toggle_line.triggered.connect()
-    toolbar.addAction(toggle_line)
+    toolbar2.addAction(toggle_line)
 
-    drag_action = QAction(QIcon("msdf_gen/fonts.bmp"),"Drag", window)
+    drag_action = QAction( "Drag", window)
     drag_action.setCheckable(True)
     # drag_action.triggered.connect()
-    toolbar.addAction(drag_action)
+    toolbar2.addAction(drag_action)
+
+    window.addToolBar(toolbar)
+    window.addToolBar(toolbar2)
 
     window.show()
     app.exec()

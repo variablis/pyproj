@@ -71,10 +71,11 @@ class HelloWorld2D:
             fragment_shader='''
                 #version 330
 
+                uniform float gridopacity;
                 out vec4 f_color;
 
                 void main() {
-                    f_color = vec4(0.0, 1, 0.3, .2);
+                    f_color = vec4(0.0, 1, 0.3, .2*gridopacity);
                 }
             ''',
         )
@@ -84,6 +85,7 @@ class HelloWorld2D:
         # self.vbo4 = ctx.buffer(np.array([[[-1,-1],[0,0]],[[-1,-2],[1,1]]]).astype('f4'))
         self.vao4 = ctx.vertex_array(self.prog4, self.vbo4, 'in_vert')
         self.mvp4 = self.prog4['mvp']
+        self.gridop = self.prog4['gridopacity']
 
         # MSDF TEXT
         # Shaders & Program
@@ -171,7 +173,7 @@ class HelloWorld2D:
             vaox.render()
 
 
-    def linerender(self, pts, zf):
+    def linerender(self, pts):
         
         data = pts.astype('f4').tobytes()
         # print(pts.astype('f4'))
@@ -196,8 +198,18 @@ class HelloWorld2D:
         self.vao2.render(moderngl.POINTS)
 
 
+        self.vao4.render(moderngl.LINES)
 
 
+    def clamp(self, n, min, max): 
+        if n < min: 
+            return min
+        elif n > max: 
+            return max
+        else: 
+            return n 
+
+    def updateMvp(self, zf):
 
         windw=self.ctx.viewport[2]
         windh=self.ctx.viewport[3]
@@ -218,7 +230,9 @@ class HelloWorld2D:
 
         self.viewport.write(np.array([windw, windh]).astype('f4'))
 
-        self.vao4.render(moderngl.LINES)
+        # print(zf)
+        self.gridop.write(np.array(self.clamp(zf,0,1)).astype('f4'))
+
 
     def circl(self, pts):
         # data = pts.astype('f4').tobytes()
