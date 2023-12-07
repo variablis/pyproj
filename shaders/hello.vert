@@ -6,17 +6,22 @@
 //uniform float zz;
 // uniform float Zoo;
 // uniform vec2 mp;
-uniform mat4 Mvp;
+uniform mat4 mvp;
+// uniform float thickness;
+
 
 in vec2 in_vert;
 in vec4 in_color;
-
 out vec4 v_color;
 
 
 void main() {
 
 
+
+
+    // float xx=thickness;
+    // float xx=in_luv.x;
 
     //  Mvp * vec4(in_vert, 0.0, 1.0);
 
@@ -62,6 +67,6 @@ void main() {
 
     // Set the transformed position
     // gl_Position = proj* view * vec4(in_vert, 0.0, 1.0);
-    gl_Position = Mvp * vec4(in_vert, 0.0, 1.0);
+    gl_Position = mvp*vec4(in_vert, 0.0, 1.0);
 
 }

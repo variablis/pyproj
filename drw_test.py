@@ -10,7 +10,8 @@ from PyQt6.QtCore import Qt, QTimer
 from qtmoderngl import ModernGLWidget
 from renderer_example import HelloWorld2D, PanTool
 
-
+from drw_classes import Point
+import json
 
 # geoobjects={
 # "segments": [
@@ -21,29 +22,12 @@ from renderer_example import HelloWorld2D, PanTool
 # ]
 # }
 
-class Point:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-        self.xy = [x,y]
 
-    def __sub__(self, other_point):
-        """Overloaded subtraction operator for Point instances."""
-        return Point(self.x - other_point.x, self.y - other_point.y)
-    
-    def __add__(self, other_point):
-        """Overloaded addition operator for Point instances."""
-        return Point(self.x + other_point.x, self.y + other_point.y)
-
-
-    def get(self):
-        return [self.x, self.y]
 
 class LineData:
     idx=0
     lines = []
-    buffer = []
-    # activebuffer = []
+    # buffer = []
 
     def __init__(self, point=[], point1=0, point2=0, distance=0.0, angle=0.0, visibility=1, layer=1, color=[1,1,1,1], constraints={}):
         self.line_id = self.idx
@@ -56,6 +40,7 @@ class LineData:
         self.distance = distance
         self.angle = angle
         self.constraints = constraints
+        # self.lineuv= lineuv
 
         self.selected=False
         self.drag=False
@@ -140,9 +125,9 @@ class LineData:
             cls.lines[-1].point[1] = endpoint
             cls.lines[-1].color = color
 
-            # buf = cls.buffer
-            cls.buffer.append([ cls.lines[-1].point[0].xy + cls.lines[-1].color , cls.lines[-1].point[1].xy + cls.lines[-1].color ])
-            # cls.buffer = buf
+       
+            # cls.buffer.append([ cls.lines[-1].point[0].xy + cls.lines[-1].color , cls.lines[-1].point[1].xy + cls.lines[-1].color ])
+  
 
     @classmethod
     def getData(cls):
@@ -153,12 +138,12 @@ class LineData:
     def makeBuffer(cls):
         
         tmp_list = []
-        # buf = cls.buffer
         for elem in cls.lines:
-            tmp_list.append([ elem.point[0].xy + elem.color , elem.point[1].xy + elem.color ])
+            tmp_list.append([ 
+                elem.point[0].xy + elem.color,
+                elem.point[1].xy + elem.color
+            ])
 
-        # cls.buffer = tmp
-        # cls.activebuffer = tmp_list
         # print(tmp_list)
         return np.array(tmp_list)
 
@@ -167,13 +152,16 @@ class LineData:
         for elem in cls.lines:
             print(f"Line ID: {elem.line_id}, Point1: {elem.point[0]}, Point2: {elem.point[1]}, color: {elem.color}")
 
-    @classmethod
-    def printBuffer(cls):
-        print(cls.buffer)
+    # @classmethod
+    # def printBuffer(cls):
+    #     print(cls.buffer)
 
 
 class LineSegment:
     def __init__(self):
+
+        self.startpoint=None
+        self.endpoint=None
         
         self.startcx=None
         self.startcy=None
@@ -207,7 +195,7 @@ class LineSegment:
                 print('segment done')
                 # LineData.add([self.startcx, self.startcy], [self.endcx, self.endcy], distance=self.distance, angle=self.degrees)
                 # janofikse beigu punkts tikai
-                LineData.add(Point(self.endcx, self.endcy), distance=self.distance, angle=self.degrees)
+                LineData.add(self.endpoint, distance=self.distance, angle=self.degrees)
                 # verts = np.concatenate((verts, self.myvert), axis=0)
             else:
                 # print("not end")
@@ -223,7 +211,9 @@ class LineSegment:
         if clicks %2:
             LineData.livepoint(Point(cx, cy))
 
-            p1=Point(self.startcx, self.startcy)
+            TextData.update(f'{round(self.distance,4):.4f}', Point(cx, cy))
+
+            p1=self.startpoint
             p2=Point(cx, cy)
             self.distance = distance2points(p1, p2)
             self.degrees = angle2points(p1, p2)
@@ -242,11 +232,13 @@ class LineSegment:
 
 
         if not clicks %2:
-            self.startcx=cx
-            self.startcy=cy
+            self.startpoint = Point(cx,cy)
+            # self.startcx=cx
+            # self.startcy=cy
 
-        self.endcx=cx
-        self.endcy=cy
+        self.endpoint = Point(cx,cy)
+        # self.endcx=cx
+        # self.endcy=cy
     
         self.mycircle = drawCircle(0.015, cx, cy)
 
@@ -257,10 +249,110 @@ class LineSegment:
         # liveverts = np.concatenate((verts, self.myvert), axis=0)
 
         if not clicks %2:
-            LineData.startline(Point(self.startcx, self.startcy))
+            # print('segment start--')
+            LineData.startline(self.startpoint)
+
+            TextData.add(f'{round(self.distance,4):.4f}', self.startpoint)
+
+            # TextData.printBuffer()
+            # TextData.makeBuffer()
         
 
         livecircles = circles + [self.mycircle]
+
+
+class TextData:
+    
+    # Opening JSON file
+    f = open('msdf_gen/fonts.json')
+    # returns JSON object as # a dictionary
+    fdata = json.load(f)
+    # Closing file
+    f.close()
+
+    texts = []
+
+    def __init__(self, str, offset):
+        self.str=str
+        self.offset=offset
+        self.vtx=self.txt2vtx()
+
+    def txt2vtx(self):
+        wi = he = 256
+        arr=[]
+        for i,s in enumerate(self.str):
+            for glyph in self.fdata.get("glyphs", []):
+                if glyph.get("unicode") == ord(s):
+                    dd = glyph.get("atlasBounds", {})
+                    pb = glyph.get("planeBounds", {})
+
+                    xl=pb['left']
+                    xr=pb['right']
+                    yt=pb['top']
+                    yb=pb['bottom']
+
+                    sl=dd['left']/wi
+                    sr=dd['right']/wi
+                    tt=dd['top']/he
+                    tb=dd['bottom']/he
+        
+                    sc = 0.07
+
+                    if not self.offset:
+                        self.offset = Point(0,0)
+                    # xy uv
+                    ob = [
+                        # -0.5, -0.5, 0.0, 1.0,
+                        # 0.5, -0.5, 1.0, 1.0, 
+                        # 0.5, 0.5,  1.0, 0.0, 
+                        # -0.5, 0.5, 0.0, 0.0, 
+
+                        ((xl+i*.5)*sc)+self.offset.x, (yb*sc)+self.offset.y, sl, 1-tb,
+                        ((xr+i*.5)*sc)+self.offset.x, (yb*sc)+self.offset.y, sr, 1-tb, 
+                        ((xr+i*.5)*sc)+self.offset.x, (yt*sc)+self.offset.y, sr, 1-tt, 
+                        ((xl+i*.5)*sc)+self.offset.x, (yt*sc)+self.offset.y, sl, 1-tt, 
+                    ]
+
+                    # print(offset.xy)
+                    # print(ob)
+                    # print(ord(s))
+
+                    arr.append(ob)
+        return arr
+
+    @classmethod
+    def add(cls, str, offset):
+        cls.texts.append(cls(str, offset))
+        # print(cls.texts)
+
+    @classmethod
+    def update(cls, str, offset):
+        if cls.texts:
+            cls.texts[-1] = cls(str, offset)
+
+
+    @classmethod
+    def makeBuffer(cls):
+
+        tmp_list = []
+        for elem in cls.texts:
+            tmp_list.append( elem.vtx )
+
+            # print('eee')
+            # print(elem.offset.xy)
+
+        # print(np.vstack(tmp_list))
+        # return np.array(tmp_list)
+        if tmp_list:
+            return np.vstack(tmp_list)
+        else:
+            return np.array([[]])
+
+    @classmethod
+    def printBuffer(cls):
+        for elem in cls.texts:
+            print(elem.str)
+
 
 def distance2points(p1, p2):
     point1 = np.array([p1.x, p1.y])
@@ -268,6 +360,7 @@ def distance2points(p1, p2):
     vector = point2 - point1
     # Calculate the Euclidean distance between the two points
     return np.linalg.norm(vector)
+
 
 def angle2points(p1, p2):
     point1 = np.array([p1.x, p1.y])
@@ -465,14 +558,17 @@ class MyWidget(ModernGLWidget):
         self.ctx.viewport = (0, 0, 512, 512)
         self.scene = HelloWorld2D(self.ctx)
 
+
     def render(self):
         self.ctx.viewport = (0, 0, self.size().width(), self.size().height())
         self.screen.use()
         self.scene.clear()
 
-        self.scene.distancetext(str(lseg.distance)+'...'+str(lseg.degrees))
+        # self.scene.textgen(str(lseg.distance)+'...'+str(lseg.degrees), lseg.startpoint)
+
+        self.scene.textrender(TextData.makeBuffer())
         self.scene.linerender(LineData.makeBuffer(), self.zfakt)
-        self.scene.circl(np.array(livecircles))
+        # self.scene.circl(np.array(livecircles))
 
     def mycoord(self):
         # origin ir main windowa kreisais augsejais sturis 0,0
@@ -530,6 +626,8 @@ class MyWidget(ModernGLWidget):
         pan_tool.dragging(self.mycoord())
         self.scene.pan(pan_tool.value)
 
+        
+
         if self.user_drag_start:
             # Check for ongoing drag operation
             drag_distance = distance2points(self.mycoord(), self.user_drag_start)
@@ -544,6 +642,8 @@ class MyWidget(ModernGLWidget):
                 uds = self.user_drag_start 
 
         if self.createlineactive:
+            
+
             lseg.updatepoints(self.mycoord(), self.clickcount, self.size(), pan_tool.value, self.zfakt)
         else:
             checkpoint(self.mycoord(), (self.size().width(), self.size().height()), self.zfakt)

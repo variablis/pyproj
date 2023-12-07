@@ -10,4 +10,15 @@ V["p1"] = np.dstack((np.linspace(110,1110,n),np.ones(n)*350)).reshape(n,1,2)
 V["uv"] = (0,0), (0,1), (1,0), (1,1)
 V["thickness"] = np.linspace(0.1, 8.0, n).reshape(n,1)
 
-print(V[-1])
+# V.ravel()
+
+# print(V[-1])
+# print(V.ravel())
+
+
+# I = np.zeros((n,6), dtype=np.uint32)
+# I[:] = [0,1,2,1,2,3]
+# I += 4*np.arange(n,dtype=np.uint32).reshape(n,1)
+
+
+# print(I)
