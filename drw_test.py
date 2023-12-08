@@ -5,7 +5,7 @@ import random
 import math
 
 from PyQt6.QtGui import QSurfaceFormat
-from PyQt6.QtWidgets import QApplication, QMainWindow, QToolBar, QFileDialog, QVBoxLayout, QWidget,QLabel
+from PyQt6.QtWidgets import QApplication, QMainWindow, QToolBar, QFileDialog, QVBoxLayout, QWidget,QLabel, QHBoxLayout, QSplitter, QSizePolicy
 from PyQt6.QtGui import QAction, QCursor, QIcon
 from PyQt6.QtCore import Qt, QTimer
 
@@ -15,6 +15,8 @@ from renderer_example import HelloWorld2D, PanTool
 from drw_classes import Point
 import json
 from pathlib import Path
+
+from drw_tree import MyTreeWidget, Group, Object
 
 # geoobjects={
 # "segments": [
@@ -27,23 +29,27 @@ from pathlib import Path
 
 
 
-class LineData:
+class LineData(Object):
     idx=0
     lines = []
     # buffer = []
+    root=None
+    treewidget=None
 
-    def __init__(self, points=[], point1=0, point2=0, distance=0.011, angle=0.0, visibility=1, layer=1, color=[1,1,1,1], constraints={}):
+    def __init__(self, points=[], distance=0.011, angle=0.0, visibility=1, layer=1, color=[1,1,1,1], constraints={}, name=''):
+        Object.__init__(self, name)
+
         self.line_id = self.idx
         self.visibility = visibility
         self.layer = layer
         self.color = color
         self.points = points #masivs ar punktiem
-        self.point1 = point1
-        self.point2 = point2
+        # self.point1 = point1
+        # self.point2 = point2
         self.distance = distance
         self.angle = angle
         self.constraints = constraints
-        # self.lineuv= lineuv
+
 
         self.selected=False
         self.drag=False
@@ -51,6 +57,9 @@ class LineData:
         self.prev_mousepos=None
         
         self.dragobj=-1
+
+        
+        self.name=name
 
     def mpprint(self):
         print("inf:", self.line_id, self.mousepos.get(), self.drag)
@@ -114,7 +123,7 @@ class LineData:
     
     @classmethod
     def startline(cls, startpoint):
-        cls.lines.append(cls( [startpoint, startpoint] ))
+        cls.lines.append(cls( points=[startpoint, startpoint] ))
         cls.idx +=1
         # print(cls.lines)
 
@@ -131,8 +140,11 @@ class LineData:
             cls.lines[-1].points[1] = endpoint
             cls.lines[-1].color = color
 
-       
-            # cls.buffer.append([ cls.lines[-1].point[0].xy + cls.lines[-1].color , cls.lines[-1].point[1].xy + cls.lines[-1].color ])
+            cls.lines[-1].name=str(cls.lines[-1].line_id) + ' - line'
+            cls.root.add_child(cls.lines[-1])
+            # cls.root.print_hierarchy()
+
+            cls.treewidget.build_hierarchy(cls.root)
   
 
     @classmethod
@@ -175,8 +187,8 @@ class LineSegment:
         self.endcx=None
         self.endcy=None
 
-        self.myvert = np.array([[]])
-        self.mycircle =[]
+        # self.myvert = np.array([[]])
+        # self.mycircle =[]
 
         self.toolstate=False
         self.distance=0.0
@@ -187,13 +199,13 @@ class LineSegment:
         if not checked:
             print('exit tool')
 
-            global circles
-            global livecircles
-            livecircles = circles
+            # global circles
+            # global livecircles
+            # livecircles = circles
 
     def pointadd(self, clicks):
-        global verts
-        global circles
+        # global verts
+        # global circles
 
         if self.toolstate:
             if not clicks %2:
@@ -206,7 +218,7 @@ class LineSegment:
             else:
                 # print("not end")
                 pass
-            circles.append(self.mycircle)
+            # circles.append(self.mycircle)
 
     def updatepoints(self, mp, clicks, window, pan, zfakt):
         sw=window.width()/512/zfakt
@@ -225,11 +237,11 @@ class LineSegment:
             self.degrees = angle2points(p1, p2)
 
     def createpoints(self, mp, clicks, window, pan, zfakt):
-        global verts
-        global liveverts
+        # global verts
+        # global liveverts
 
-        global circles
-        global livecircles
+        # global circles
+        # global livecircles
 
         sw=window.width()/512/zfakt
         sh=window.height()/512/zfakt
@@ -246,7 +258,7 @@ class LineSegment:
         # self.endcx=cx
         # self.endcy=cy
     
-        self.mycircle = drawCircle(0.015, cx, cy)
+        # self.mycircle = drawCircle(0.015, cx, cy)
 
         # self.myvert = np.array([
         #     [self.startcx, self.startcy, 1,1,1,1],
@@ -264,7 +276,7 @@ class LineSegment:
             # TextData.makeBuffer()
         
 
-        livecircles = circles + [self.mycircle]
+        # livecircles = circles + [self.mycircle]
 
 
 class TextData:
@@ -551,26 +563,22 @@ def linestopdrag(mouse_pt, wsize, zf):
     # LineData.updateBuffer()
 
 
-
-# verts = np.array([[0,0, 1,1,1,1],[0,0, 1,1,1,1]])
-# liveverts =np.array([[0,0, 1,1,1,1],[0,0, 1,1,1,1]]) #verts+create line aktivais
-
 pan_tool = PanTool()
 lseg = LineSegment()
 
-circles = []
-livecircles =[]
+# circles = []
+# livecircles =[]
 
-def drawCircle( radius,  x1,  y1):
-    circle_dots = []  # Array to store dots for the current circle
+# def drawCircle( radius,  x1,  y1):
+#     circle_dots = []  # Array to store dots for the current circle
 
-    for angle in range(0, 360, 60):
-    # for(double i = 0; i < 2 * M_PI; i += 2 * M_PI / NUMBER_OF_VERTICES):
-        rad_angle = angle * 3.14 / 180
-        circle_dots.append([x1+radius*math.sin(rad_angle), y1+radius*math.cos(rad_angle), 1,1,1,1])
-        # print(circle_dots)
+#     for angle in range(0, 360, 60):
+#     # for(double i = 0; i < 2 * M_PI; i += 2 * M_PI / NUMBER_OF_VERTICES):
+#         rad_angle = angle * 3.14 / 180
+#         circle_dots.append([x1+radius*math.sin(rad_angle), y1+radius*math.cos(rad_angle), 1,1,1,1])
+#         # print(circle_dots)
 
-    return circle_dots
+#     return circle_dots
 
 class MyWidget(ModernGLWidget):
     def __init__(self):
@@ -732,6 +740,7 @@ class MyWidget(ModernGLWidget):
             print('save file...')
 
 
+
 def run_app():
     app = QApplication([])
 
@@ -743,11 +752,32 @@ def run_app():
     mywidget = MyWidget()
     mywidget.setMouseTracking(True)
     mywidget.setFormat(fmt)
+    mywidget.setGeometry(0, 0, 300, 300)
+
     
     window = QMainWindow()
-    window.setMouseTracking(True)
-    window.setCentralWidget(mywidget)
     window.setGeometry(100, 100, 512, 512)
+    window.setMouseTracking(True)
+    # window.setCentralWidget(mywidget)
+
+    # Create the layout for the central widget
+    tree = MyTreeWidget()
+
+    splitter = QSplitter()
+    splitter.addWidget(tree)
+    splitter.addWidget(mywidget)
+
+    window.setCentralWidget(splitter)
+    # Set a minimum size for the second widget
+    tree.setMinimumWidth(100)
+    tree.setMaximumWidth(180)
+
+    root_group = Group.addRoot('Root')
+    LineData.root = root_group
+    LineData.treewidget = tree
+    tree.build_hierarchy(Group.getRoot())
+    tree.itemSelectionChanged.connect(tree.on_item_selection_changed)
+ 
 
     toolbar = QToolBar()
     toolbar2 = QToolBar()
