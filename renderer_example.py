@@ -172,6 +172,9 @@ class HelloWorld2D:
          
             vaox.render()
 
+    def bufcl(self):
+        self.vbo.clear()
+        self.vbo2.clear()
 
     def linerender(self, pts):
         

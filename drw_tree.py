@@ -1,55 +1,21 @@
-from PyQt6.QtWidgets import QApplication, QMainWindow, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import QApplication, QTreeWidget, QTreeWidgetItem
 from PyQt6.QtGui import QIcon
-from PyQt6.QtCore import Qt
-class Group:
-    rootobj = None
+from PyQt6.QtCore import Qt, pyqtSignal
 
-    def __init__(self, name):
-        self.name = name
-        self.children = []
-
-        # add child to root by default
-        if self.rootobj is not None:
-            self.rootobj.add_child(self)
-
-    def add_child(self, child):
-        if hasattr(child, 'parent') and child.parent is not None:
-            child.parent.children.remove(child)
-
-        self.children.append(child)
-        child.parent = self
-
-    @classmethod
-    def addRoot(cls, name):
-        # Create the root group
-        if cls.rootobj is None:
-            cls.rootobj = cls(name)
-        return cls.rootobj
-
-    @classmethod
-    def getRoot(cls):
-        return cls.rootobj
-
-    def print_hierarchy(self, indent=0):
-        print("  " * indent + self.name)
-        for child in self.children:
-            if isinstance(child, Group):
-                child.print_hierarchy(indent + 1)
-            else:
-                print("  " * (indent + 1) + child.name)
-
-
-class Object:
-    def __init__(self, name):
-        self.name = name
-        self.parent = None
+from drw_linedata import LineData, Group
 
 
 class MyTreeWidget(QTreeWidget):
+    itemSelectionChanged = pyqtSignal()
+    aaa= pyqtSignal()
+    
+
     def __init__(self):
         super().__init__()
 
         self.setHeaderHidden(True)
+        # self.myf=None
+        # pyqtSignal(object)
 
         # self.root_item = QTreeWidgetItem(["Root Item"])
         # self.addTopLevelItem(self.root_item)
@@ -62,7 +28,7 @@ class MyTreeWidget(QTreeWidget):
         if parent_group is None:
             parent_group = root_group
 
-        item = QTreeWidgetItem([parent_group.name, 'idval'])
+        item = QTreeWidgetItem([parent_group.name, '-1'])
         item.setIcon(0, QIcon('./img/folder.png'))  # Set the icon
 
         if parent_item is None:
@@ -80,36 +46,61 @@ class MyTreeWidget(QTreeWidget):
 
         self.expandAll()
 
-    def on_item_selection_changed(self):
-       
-        sel=self.selectedItems()
-        if sel:
-            print(sel[0].data(1,0))
+    # def on_item_selection_changed(self):
+        # print("called")
+        # pass
+        # sel=self.selectedItems()
+        # if sel:
+        #     print(int(sel[0].data(1,0)))
+        #     sl=LineData.getOneData(int(sel[0].data(1,0)))
+        #     sl.color=[1,1,0,1]
+        #     sl.selected=True
+            # LineData.makeBuffer()
+        
+ 
+    # def keyPressEvent(self, event):
+    #     if event.key()==Qt.Key.Key_Control:
+    #         print('ctrl')
 
-    # def on_item_clicked(self, item, column):
-    #     if not self.selectedItems():
-    #         print("No item selected (deselected)")
-
-    # def mouseMoveEvent(self, event):
-    #     # Check if the mouse is over a QTreeWidgetItem
-    #     print(event.pos())
-    #     item_at_pos = self.itemAt(event.pos())
-    #     if item_at_pos:
-    #         print("Mouse over item:", item_at_pos.text(0))
 
     def mouseReleaseEvent(self ,event):
+        ctrl_pressed = QApplication.keyboardModifiers() == Qt.KeyboardModifier.ControlModifier
+        # print(self.itemAt(event.pos()))
         # print(event.pos())
         item_at_pos = self.itemAt(event.pos())
         if item_at_pos:
-            print("Mouse over item:", item_at_pos.text(0))
-        else:
-            print("blank")
-            self.selectionModel().clearSelection()
+            if ctrl_pressed is False:
+                self.selectionModel().clearSelection()
+                LineData.deselectAll()
+                # self.itemSelectionChanged.emit()
+                # self.myf.update()
+                # item_at_pos.setSelected(True)
+                self.itemSelectionChanged.emit()
+         
+            
+            # item_at_pos.setSelected(True)
 
-        # print(self.currentItem().sizeHint(0))
-        # if event.button() == Qt.MouseButton.LeftButton and not self.rect().contains(event.pos()):
-   
-        #     self.selectionModel().clearSelection()
+            id=int(item_at_pos.data(1,0))
+            if id>-1:
+                # LineData.deselectAll()
+                sl=LineData.getOneData(id)
+                sl.color=[1,1,0,1]
+                sl.selected=True
+                self.itemSelectionChanged.emit()
+
+            item_at_pos.setSelected(True)  
+            self.itemSelectionChanged.emit()
+
+            # print("Mouse over item:", item_at_pos.text(0))
+        else:
+            # print("blank")
+            self.selectionModel().clearSelection()
+            LineData.deselectAll()
+
+            self.itemSelectionChanged.emit()
+            # self.myf.update()
+
+
 
 
 # root_group = Group.addRoot('Root')
