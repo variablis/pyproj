@@ -1,5 +1,4 @@
-# Project
-Python vector drawing app
+# Python vector drawing app
 
 ### Tasks
 - [ ] Toggle dimensions visibility
