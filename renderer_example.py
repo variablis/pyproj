@@ -142,7 +142,7 @@ class HelloWorld2D:
         # texture.use()
             # text render
         
-
+        self.vbo3 = ctx.buffer(reserve='4MB', dynamic=True)
     def textrender(self, pts):
         # pass
         if pts.size:
@@ -152,9 +152,9 @@ class HelloWorld2D:
 
             
             data = pts.astype('f4').tobytes()
-            # self.vbo3.orphan()
-            # self.vbo3.write(data)
-            vbo3 = self.ctx.buffer(data)
+            self.vbo3.orphan()
+            self.vbo3.write(data)
+            # vbo3 = self.ctx.buffer(data)
 
             # print(pts.size)
             rectangle_pattern = np.array([0, 1, 2,  0, 2, 3], dtype='i4')
@@ -164,7 +164,7 @@ class HelloWorld2D:
             # self.ibo.orphan()
             ibox = self.ctx.buffer(indices.tobytes()) 
 
-            vaox = self.ctx.vertex_array(self.prog3, [(vbo3, '2f 2f', 'in_vert', 'tex_coord')], ibox)
+            vaox = self.ctx.vertex_array(self.prog3, [(self.vbo3, '2f 2f', 'in_vert', 'tex_coord')], ibox)
 
 
             # self.vao3.transform(self.vbo2)
@@ -172,11 +172,16 @@ class HelloWorld2D:
          
             vaox.render()
 
+    # clear line and text buffer
     def bufcl(self):
         self.vbo.clear()
         self.vbo2.clear()
 
+        self.vbo3.clear()
+
     def linerender(self, pts):
+
+        # print(pts.tolist())
         
         data = pts.astype('f4').tobytes()
         # print(pts.astype('f4'))

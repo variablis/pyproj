@@ -72,7 +72,7 @@ class LineSegment:
         if clicks %2:
             LineData.livepoint(Point(cx, cy))
 
-            TextData.update(f'{round(self.distance,4):.4f} {round(self.degrees,2):.2f}°', Point(cx, cy))
+            TextData.update(f'{round(self.distance,4):.4f} {round(self.degrees,2):.2f}°', Point(cx, cy), LineData.getLastElem().line_id)
 
             p1=self.startpoint
             p2=Point(cx, cy)
@@ -113,7 +113,7 @@ class LineSegment:
             # print('segment start--')
             LineData.startline(self.startpoint)
 
-            TextData.add(f'{round(self.distance,4):.4f}', self.startpoint)
+            TextData.add(f'{round(self.distance,4):.4f}', self.startpoint, LineData.getLastElem().line_id)
 
             # TextData.printBuffer()
             # TextData.makeBuffer()
@@ -122,12 +122,17 @@ class LineSegment:
         # livecircles = circles + [self.mycircle]
 
 
-
-def checkpoint(mouse_pt, wsize, zf):
+def tempf(mouse_pt, wsize, zf):
     sw = wsize[0]/512/zf
     sh = wsize[1]/512/zf
     cx = (mouse_pt.x*2 -1*sw+pan_tool.value[0])
     cy = (-mouse_pt.y*2 +1*sh+pan_tool.value[1])
+
+    return cx, cy
+
+
+def checkpoint(mouse_pt, wsize, zf):
+    cx, cy = tempf(mouse_pt, wsize, zf)
 
     for d in LineData.getData():
         a_pt = d.points[0]
@@ -141,25 +146,10 @@ def checkpoint(mouse_pt, wsize, zf):
         if test[0]:
             if not d.selected:
                 d.color = [1,0,1,1]
-            # if test[1] == 0:
-            #     # print('nulle')
-            #     pass
-
-            # elif test[1] == 1:
-            #     # print('vienns')
-            #     pass
-
-            # elif test[1] == 2:
-            #     if not d.selected:
-            #         d.color = [1,0,1,1]
-                # print(d.line_id)
 
 uds=None
 def checkclickedpoint(mouse_pt, wsize, zf):
-    sw = wsize[0]/512/zf
-    sh = wsize[1]/512/zf
-    cx = (mouse_pt.x*2 -1*sw+pan_tool.value[0])
-    cy = (-mouse_pt.y*2 +1*sh+pan_tool.value[1])
+    cx, cy = tempf(mouse_pt, wsize, zf)
 
     for d in LineData.getData():
         a_pt = d.points[0]
@@ -174,22 +164,14 @@ def checkclickedpoint(mouse_pt, wsize, zf):
             d.selected=False
  
 
-def check_dr_point(drag_start_pt, wsize, zf):
-    sw = wsize[0]/512/zf
-    sh = wsize[1]/512/zf
-    cx = (drag_start_pt.x*2 -1*sw+pan_tool.value[0])
-    cy = (-drag_start_pt.y*2 +1*sh+pan_tool.value[1])
+def check_dr_point(mouse_pt, wsize, zf):
+    cx, cy = tempf(mouse_pt, wsize, zf)
 
     for d in LineData.getData():
         a_pt = d.points[0]
         b_pt = d.points[1]
 
         test = point_on_line(Point(cx,cy), a_pt, b_pt)
-
-        # if point_on_line(Point(cx,cy), a_pt, b_pt):
-        #     # print("line drag start")
-        #     d.drag=True
-        #     d.mousepos = d.prev_mousepos = Point(cx,cy)
 
         if test[0]==True:
             d.drag=True
@@ -210,21 +192,21 @@ def check_dr_point(drag_start_pt, wsize, zf):
 
 
 def linedrag(mouse_pt, wsize, zf):
-    sw = wsize[0]/512/zf
-    sh = wsize[1]/512/zf
-    cx = (mouse_pt.x*2 -1*sw+pan_tool.value[0])
-    cy = (-mouse_pt.y*2 +1*sh+pan_tool.value[1])
+    cx, cy = tempf(mouse_pt, wsize, zf)
 
     for d in LineData.getData():
+        
         if d.drag:
-            d.mousepos =  Point(cx,cy)
+            d.mousepos = Point(cx,cy)
             # d.mpprint()
             # d.linemove()
             # print(d.dragobj)
             d.pointmove(d.dragobj)
+            # print(d.line_id)
 
             # update coresponding text element
-            TextData.update( f'{round(d.distance,4):.4f} {round(d.degrees,2):.2f}°', d.mousepos, d.line_id)
+            text = f'{round(d.distance,4):.4f} {round(d.angle,2):.2f}°'
+            TextData.update( text, d.mousepos, d.line_id)
 
            
 
@@ -384,6 +366,17 @@ class MyWidget(ModernGLWidget):
         self.update()
 
 
+
+    # def keyPressEvent(self, event):
+    #     print(event.key())
+    #     if event.key() == Qt.Key.Key_Delete:
+    #         print("Delete key pressed!")
+
+    #         # LineData.deleteData()
+    #     else:
+    #         super().keyPressEvent(event)
+
+
     def newFile(self):
         LineData.lines=[]
         TextData.texts=[]
@@ -398,7 +391,7 @@ class MyWidget(ModernGLWidget):
         # self.render()
         print('new file...')
 
-    def showFileDialog(self):
+    def openFile(self):
         home_dir = str(Path.cwd())
         fname = QFileDialog.getOpenFileName(self, 'Open file', home_dir)
 
@@ -409,7 +402,8 @@ class MyWidget(ModernGLWidget):
 
             r=Group.createGroupFromJson(data)
             LineData.root=r
-            LineData.printData()
+            # LineData.printData()
+            LineData.treewidget.build_hierarchy(r)
 
     def saveFile(self):
         home_dir = str(Path.cwd())
@@ -428,85 +422,105 @@ class MyWidget(ModernGLWidget):
 
             
 
+class MyMainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+
+            
+        fmt = QSurfaceFormat()
+        fmt.setVersion(3, 3)
+        fmt.setSamples(4)  # if you want multi-sampling
+        # QSurfaceFormat.setDefaultFormat(fmt)
+        
+        self.mywidget = MyWidget()
+        self.mywidget.setMouseTracking(True)
+        self.mywidget.setFormat(fmt)
+        self.mywidget.setGeometry(0, 0, 300, 300)
+
+        
+        # window = MyMainWindow()
+        self.setGeometry(100, 100, 512, 512)
+        self.setMouseTracking(True)
+        # window.setCentralWidget(mywidget)
+
+        # Create the layout for the central widget
+        self.tree = MyTreeWidget()
+
+        splitter = QSplitter()
+        splitter.addWidget(self.tree)
+        splitter.addWidget(self.mywidget)
+
+        self.setCentralWidget(splitter)
+        # Set a minimum size for the second widget
+        self.tree.setMinimumWidth(100)
+        self.tree.setMaximumWidth(180)
+
+        root_group = Group.addRoot('Root')
+        LineData.root = root_group
+        LineData.treewidget = self.tree
+        self.tree.build_hierarchy(Group.getRoot())
+        # tree.itemSelectionChanged.connect(tree.on_item_selection_changed)
+        self.tree.itemSelectionChanged.connect(self.mywidget.update)
+        # tree.myf=mywidget
+
+        toolbar = QToolBar()
+        toolbar2 = QToolBar()
+
+        tbtn_new_file = QAction(QIcon("img/paper.png"), "New", self)
+        tbtn_new_file.triggered.connect(self.mywidget.newFile)
+        toolbar.addAction(tbtn_new_file)
+
+        tbtn_open_file = QAction(QIcon("img/folder.png"), "Open", self)
+        tbtn_open_file.triggered.connect(self.mywidget.openFile)
+        toolbar.addAction(tbtn_open_file)
+
+        tbtn_save_file = QAction(QIcon("img/diskete.png"), "Save", self)
+        tbtn_save_file.triggered.connect(self.mywidget.saveFile)
+        toolbar.addAction(tbtn_save_file)
+
+        create_line = QAction("Create Line", self)
+        create_line.setCheckable(True)
+        create_line.toggled.connect(self.mywidget.createlinetool)
+        toolbar2.addAction(create_line)
+
+        join_dots = QAction("Join Dots", self)
+        # join_dots.triggered.connect()
+        toolbar2.addAction(join_dots)
+
+        toggle_line = QAction("Toggle lines", self)
+        # toggle_line.triggered.connect()
+        toolbar2.addAction(toggle_line)
+
+        drag_action = QAction( "Drag", self)
+        drag_action.setCheckable(True)
+        # drag_action.triggered.connect()
+        toolbar2.addAction(drag_action)
+
+        self.addToolBar(toolbar)
+        self.addToolBar(toolbar2)
+        
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key.Key_Delete:
+            # print("Delete key pressed!")
+
+            selids=LineData.getSelectedIds()
+            TextData.deleteSelected(selids)
+            LineData.deleteSelected()
+            
+            self.mywidget.scene.bufcl()
+            self.mywidget.update()
+            # self.mywidget.render()
+        else:
+            super().keyPressEvent(event)
 
 
 def run_app():
     app = QApplication([])
 
-    fmt = QSurfaceFormat()
-    fmt.setVersion(3, 3)
-    fmt.setSamples(4)  # if you want multi-sampling
-    # QSurfaceFormat.setDefaultFormat(fmt)
-    
-    mywidget = MyWidget()
-    mywidget.setMouseTracking(True)
-    mywidget.setFormat(fmt)
-    mywidget.setGeometry(0, 0, 300, 300)
+    mywindow = MyMainWindow()
+    mywindow.show()
 
-    
-    window = QMainWindow()
-    window.setGeometry(100, 100, 512, 512)
-    window.setMouseTracking(True)
-    # window.setCentralWidget(mywidget)
-
-    # Create the layout for the central widget
-    tree = MyTreeWidget()
-
-    splitter = QSplitter()
-    splitter.addWidget(tree)
-    splitter.addWidget(mywidget)
-
-    window.setCentralWidget(splitter)
-    # Set a minimum size for the second widget
-    tree.setMinimumWidth(100)
-    tree.setMaximumWidth(180)
-
-    root_group = Group.addRoot('Root')
-    LineData.root = root_group
-    LineData.treewidget = tree
-    tree.build_hierarchy(Group.getRoot())
-    # tree.itemSelectionChanged.connect(tree.on_item_selection_changed)
-    tree.itemSelectionChanged.connect(mywidget.update)
-    # tree.myf=mywidget
-    
-
-    toolbar = QToolBar()
-    toolbar2 = QToolBar()
-
-    tbtn_new_file = QAction(QIcon("img/paper.png"), "New", window)
-    tbtn_new_file.triggered.connect(mywidget.newFile)
-    toolbar.addAction(tbtn_new_file)
-
-    tbtn_open_file = QAction(QIcon("img/folder.png"), "Open", window)
-    tbtn_open_file.triggered.connect(mywidget.showFileDialog)
-    toolbar.addAction(tbtn_open_file)
-
-    tbtn_save_file = QAction(QIcon("img/diskete.png"), "Save", window)
-    tbtn_save_file.triggered.connect(mywidget.saveFile)
-    toolbar.addAction(tbtn_save_file)
-
-    create_line = QAction("Create Line", window)
-    create_line.setCheckable(True)
-    create_line.toggled.connect(mywidget.createlinetool)
-    toolbar2.addAction(create_line)
-
-    join_dots = QAction("Join Dots", window)
-    # join_dots.triggered.connect()
-    toolbar2.addAction(join_dots)
-
-    toggle_line = QAction("Toggle lines", window)
-    # toggle_line.triggered.connect()
-    toolbar2.addAction(toggle_line)
-
-    drag_action = QAction( "Drag", window)
-    drag_action.setCheckable(True)
-    # drag_action.triggered.connect()
-    toolbar2.addAction(drag_action)
-
-    window.addToolBar(toolbar)
-    window.addToolBar(toolbar2)
-
-    window.show()
     app.exec()
 
 

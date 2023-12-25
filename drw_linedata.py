@@ -30,6 +30,14 @@ class Group:
         self.children.append(child)
         child.parent = self
 
+
+    def delete_child(self, child):
+        if child in self.children:
+            self.children.remove(child)
+            child.parent = None
+        else:
+            print("Child not found in the group.")
+
     @classmethod
     def remove_root_children(cls):
         cls.rootobj.children=[]
@@ -88,7 +96,7 @@ class Group:
                 # new_child = Object(ch_name)  # You may need to replace Object with the appropriate class
                 # new_group.add_child(new_child)
 
-                LineData.jsonToData(ch_data["points"], ch_data["id"], ch_data["distance"], ch_data["color"], ch_name)
+                LineData.jsonToData(ch_data["points"], ch_data["id"], ch_data["distance"],ch_data["angle"], ch_data["color"], ch_name)
                 # ld = LineData(line_id=ch_data["id"], name=ch_name)
                 new_group.add_child(LineData.getOneData(ch_data["id"]))
                 
@@ -156,10 +164,11 @@ class LineData(Object):
         self.prev_mousepos = self.mousepos
 
     def pointmove(self, ptid):
-        actline = self.lines[self.line_id]
+        # actline = self.lines[self.line_id]
+        actline=self
 
         actline.distance = distance2points(actline.points[0], actline.points[1])
-        actline.degrees = angle2points(actline.points[0], actline.points[1])
+        actline.angle = angle2points(actline.points[0], actline.points[1])
 
         if ptid==0 or ptid==1:
 
@@ -219,7 +228,6 @@ class LineData(Object):
             cls.lines[-1].name = str(cls.lines[-1].line_id) + ' - line'
             
             cls.root.add_child(cls.lines[-1])
-
             cls.treewidget.build_hierarchy(cls.root)
   
     @classmethod
@@ -233,8 +241,36 @@ class LineData(Object):
         return cls.lines
     
     @classmethod
+    def getLastElem(cls):
+        if cls.lines:
+            return cls.lines[-1]
+    
+    @classmethod
     def getOneData(cls, id):
-        return cls.lines[id]
+        for elem in cls.lines:
+            if elem.line_id==id:
+                return elem
+        return None
+            
+        # return next(x for x in cls.lines if x.line_id == id )
+    
+
+    @classmethod
+    def getSelectedIds(cls):
+        tmp = [elem.line_id for elem in cls.lines if elem.selected]
+        return tmp
+
+    @classmethod
+    def deleteSelected(cls):
+        tmp2 = [elem for elem in cls.lines if elem.selected]
+        for elem in tmp2:
+            cls.root.delete_child(elem)
+        cls.treewidget.build_hierarchy(cls.root)
+    
+        tmp = [elem for elem in cls.lines if not elem.selected]
+        cls.lines = tmp
+
+        # print(cls.lines)
     
 
     @classmethod
@@ -260,16 +296,18 @@ class LineData(Object):
         return {
                 'id': self.line_id,
                 'distance': self.distance,
+                'angle': self.angle,
                 'color': self.color,
                 'points' : [self.points[0].xy, self.points[1].xy]
             }
     
     @classmethod
-    def jsonToData(cls, points, line_id, distance, color, name):
+    def jsonToData(cls, points, line_id, distance, angle, color, name):
         cls.lines.append(
             cls(
                 line_id = line_id,
                 distance = distance,
+                angle = angle,
                 color = color,
                 points = [Point(points[0][0], points[0][1]), Point(points[1][0], points[1][1])],
 

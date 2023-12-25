@@ -13,10 +13,11 @@ class TextData:
 
     texts = []
 
-    def __init__(self, str, offset):
-        self.str=str
-        self.offset=offset
-        self.vtx=self.txt2vtx()
+    def __init__(self, str, offset, lid):
+        self.lineid = lid
+        self.str = str
+        self.offset = offset
+        self.vtx = self.txt2vtx()
 
     def txt2vtx(self):
         image = (256, 256)
@@ -67,18 +68,32 @@ class TextData:
         return arr
 
     @classmethod
-    def add(cls, str, offset):
-        cls.texts.append(cls(str, offset))
+    def add(cls, str, offset, lid):
+        cls.texts.append(cls(str, offset, lid))
         # print(cls.texts)
 
     @classmethod
-    def update(cls, str, offset, idx=-1):
-        if cls.texts:
-            cls.texts[idx] = cls(str, offset)
+    def update(cls, str, offset, lid):
+        # print(lid)
+        # if cls.texts:
+        #     cls.texts[lid] = cls(str, offset, lid)
+
+        for index, elem in enumerate(cls.texts):
+            if elem.lineid == lid:
+                updated_elem = cls(str, offset, lid)
+                cls.texts[index] = updated_elem
+                break
+
 
     # @classmethod
     # def getElem(cls, idx):
     #     return cls.texts[idx]
+            
+    @classmethod
+    def deleteSelected(cls, ids):
+        tmp = [elem for elem in cls.texts if elem.lineid not in ids]
+        cls.texts = tmp
+        print(cls.texts)
 
     @classmethod
     def makeBuffer(cls):
@@ -99,5 +114,4 @@ class TextData:
 
     @classmethod
     def printBuffer(cls):
-        for elem in cls.texts:
-            print(elem.str)
+        print(cls.texts)
