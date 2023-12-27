@@ -2,10 +2,14 @@ import numpy as np
 import json
 from drw_classes import Point
 
+from pathlib import Path
+bundle_dir = Path(__file__).parent
+path_to_dat = Path.cwd() / bundle_dir / "msdf"
+
 class TextData:
     
     # Opening JSON file
-    f = open('msdf_gen/fonts.json')
+    f = open(path_to_dat / "fonts.json")
     # returns JSON object as # a dictionary
     fdata = json.load(f)
     # Closing file

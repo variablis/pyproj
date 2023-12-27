@@ -11,5 +11,5 @@ pip install numpy
 
 ## Programmas palaišana:
 ```sh
-python drw_test.py
+python main.py
 ```

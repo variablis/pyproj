@@ -17,6 +17,10 @@ from drw_text import TextData
 from drw_math_func import *
 
 
+from pathlib import Path
+bundle_dir = Path(__file__).parent
+path_to_img = Path.cwd() / bundle_dir / "img"
+
 
 class LineSegment:
     def __init__(self):
@@ -466,15 +470,15 @@ class MyMainWindow(QMainWindow):
         toolbar = QToolBar()
         toolbar2 = QToolBar()
 
-        tbtn_new_file = QAction(QIcon("img/paper.png"), "New", self)
+        tbtn_new_file = QAction(QIcon(str(path_to_img/"paper.png")), "New", self)
         tbtn_new_file.triggered.connect(self.mywidget.newFile)
         toolbar.addAction(tbtn_new_file)
 
-        tbtn_open_file = QAction(QIcon("img/folder.png"), "Open", self)
+        tbtn_open_file = QAction(QIcon(str(path_to_img/"folder.png")), "Open", self)
         tbtn_open_file.triggered.connect(self.mywidget.openFile)
         toolbar.addAction(tbtn_open_file)
 
-        tbtn_save_file = QAction(QIcon("img/diskete.png"), "Save", self)
+        tbtn_save_file = QAction(QIcon(str(path_to_img/"diskete.png")), "Save", self)
         tbtn_save_file.triggered.connect(self.mywidget.saveFile)
         toolbar.addAction(tbtn_save_file)
 
@@ -515,14 +519,3 @@ class MyMainWindow(QMainWindow):
             super().keyPressEvent(event)
 
 
-def run_app():
-    app = QApplication([])
-
-    mywindow = MyMainWindow()
-    mywindow.show()
-
-    app.exec()
-
-
-if __name__ == "__main__":
-    run_app()

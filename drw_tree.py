@@ -5,6 +5,11 @@ from PyQt6.QtCore import Qt, pyqtSignal
 from drw_linedata import LineData, Group
 
 
+from pathlib import Path
+bundle_dir = Path(__file__).parent
+path_to_img = Path.cwd() / bundle_dir / "img"
+
+
 class MyTreeWidget(QTreeWidget):
     itemSelectionChanged = pyqtSignal()
     aaa= pyqtSignal()
@@ -29,7 +34,7 @@ class MyTreeWidget(QTreeWidget):
             parent_group = root_group
 
         item = QTreeWidgetItem([parent_group.name, '-1'])
-        item.setIcon(0, QIcon('./img/folder.png'))  # Set the icon
+        item.setIcon(0, QIcon(str(path_to_img/'folder.png')))  # Set the icon
 
         if parent_item is None:
             self.addTopLevelItem(item)
@@ -41,7 +46,7 @@ class MyTreeWidget(QTreeWidget):
                 self.build_hierarchy(parent_group=child, parent_item=item)
             else:
                 child_item = QTreeWidgetItem([child.name, str(child.line_id)])
-                child_item.setIcon(0, QIcon('./img/paper.png'))  # Set the icon
+                child_item.setIcon(0, QIcon(str(path_to_img/'paper.png')))  # Set the icon
                 item.addChild(child_item)
 
         self.expandAll()

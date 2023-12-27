@@ -1,0 +1,1 @@
+pyinstaller --noconsole --onefile --hidden-import glcontext --icon="img/main.ico" --add-data "img/*;img" --add-data "msdf/*;msdf" --add-data "shaders/*;shaders" main.py

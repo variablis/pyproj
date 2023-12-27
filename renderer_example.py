@@ -13,6 +13,11 @@ import math
 
 from drw_classes import Point
 
+from pathlib import Path
+bundle_dir = Path(__file__).parent
+path_to_sh = Path.cwd() / bundle_dir / "shaders"
+path_to_msdf = Path.cwd() / bundle_dir / "msdf"
+
 def grid(size, steps):
     u = np.repeat(np.linspace(-size, size, steps), 2)
     v = np.tile([-size, size], steps)
@@ -30,9 +35,9 @@ class HelloWorld2D:
 
         # LINES
         self.prog = self.ctx.program(
-            vertex_shader=Path('shaders/hello.vert').read_text(),
-            geometry_shader=Path('shaders/hello.geom').read_text(),
-            fragment_shader=Path('shaders/hello.frag').read_text()
+            vertex_shader=(path_to_sh/'hello.vert').read_text(),
+            geometry_shader=(path_to_sh/'hello.geom').read_text(),
+            fragment_shader=(path_to_sh/'hello.frag').read_text()
         )
         self.vbo = ctx.buffer(reserve='4MB', dynamic=True)
         self.vao = ctx.vertex_array(self.prog, [(self.vbo, '2f 4f', 'in_vert', 'in_color')])
@@ -45,11 +50,11 @@ class HelloWorld2D:
 
         # CIRCLES
         self.prog2 = self.ctx.program(
-            # vertex_shader=Path('shaders/triangle.vert').read_text(),
-            # fragment_shader=Path('shaders/triangle.frag').read_text()
-            vertex_shader=Path('shaders/circle.vert').read_text(),
-            geometry_shader=Path('shaders/circle.geom').read_text(),
-            fragment_shader=Path('shaders/circle.frag').read_text()
+            # vertex_shader=Path(path_to_sh/'triangle.vert').read_text(),
+            # fragment_shader=Path(path_to_sh/'triangle.frag').read_text()
+            vertex_shader=Path(path_to_sh/'circle.vert').read_text(),
+            geometry_shader=Path(path_to_sh/'circle.geom').read_text(),
+            fragment_shader=Path(path_to_sh/'circle.frag').read_text()
         )
         self.vbo2 = ctx.buffer(reserve='4MB', dynamic=True)
         self.vao2 = ctx.vertex_array(self.prog2, self.vbo2, 'in_vert','in_color')
@@ -90,8 +95,8 @@ class HelloWorld2D:
         # MSDF TEXT
         # Shaders & Program
         self.prog3 = self.ctx.program(
-            vertex_shader=Path('shaders/text.vert').read_text(),
-            fragment_shader=Path('shaders/text.frag').read_text()
+            vertex_shader=Path(path_to_sh/'text.vert').read_text(),
+            fragment_shader=Path(path_to_sh/'text.frag').read_text()
         )
         self.mvp3 = self.prog3['mvp']
 
@@ -128,7 +133,7 @@ class HelloWorld2D:
         # self.vao3 = ctx.vertex_array(self.prog2, self.vbo3, 'in_vert')
         # Texture
 
-        img = Image.open(os.path.join(os.path.dirname(__file__), 'msdf_gen/fonts.bmp')).convert('RGB')
+        img = Image.open(path_to_msdf / "fonts.bmp").convert('RGB')
         self.tex0 = self.ctx.texture(img.size, 3, img.tobytes())
 
         self.s1 = self.ctx.sampler()
