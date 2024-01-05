@@ -5,8 +5,10 @@ Iespējams arī saglabāt vai atvērt iepriekš izveidotu dokumentu.
 ## Nepieciešamās bibliotēkas:
 ```sh
 pip install moderngl
-pip install pyqt6
 pip install numpy
+pip install pyqt6
+pip install pillow
+pip install pyrr
 ```
 
 ## Programmas palaišana:

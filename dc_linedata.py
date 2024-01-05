@@ -1,17 +1,8 @@
 import numpy as np
-import json
-from drw_math_func import *
+from df_math import *
 
-# geoobjects={
-# "segments": [
-#     {"id":1, "type": "line", "visibility":1, "layer":1, "color":[1,1,1,1], "point1": [0.1, 0.3], "point2": [0.33, -1.23], "distance": 22.5, "angle": 23.6, 
-#      "constraints":{"vertical": False, "horizontal": False, "perpendicular_to_line_id": None, "paralel_to_line_id": None, 
-#         "point1_conected":[None, None], "point2_conected":[None, None], "point1_on_line_id":None, "point2_on_line_id":None}
-#     },
-# ]
-# }
 
-    
+# group class definition for hierarchical grouping
 class Group:
     rootobj = None
 
@@ -107,12 +98,14 @@ class Group:
         return new_group
 
 
-
+# object class definition
 class Object:
     def __init__(self, name):
         self.name = name
         self.parent = None
 
+
+# line data storage class
 class LineData(Object):
     idx=0
     lines = []
@@ -167,8 +160,8 @@ class LineData(Object):
         # actline = self.lines[self.line_id]
         actline=self
 
-        actline.distance = distance2points(actline.points[0], actline.points[1])
-        actline.angle = angle2points(actline.points[0], actline.points[1])
+        actline.distance = points_to_distance(actline.points[0], actline.points[1])
+        actline.angle = points_to_angle(actline.points[0], actline.points[1])
 
         if ptid==0 or ptid==1:
 

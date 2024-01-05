@@ -2,7 +2,7 @@ from PyQt6.QtWidgets import QApplication, QTreeWidget, QTreeWidgetItem
 from PyQt6.QtGui import QIcon
 from PyQt6.QtCore import Qt, pyqtSignal
 
-from drw_linedata import LineData, Group
+from dc_linedata import LineData, Group
 
 
 from pathlib import Path
@@ -10,6 +10,7 @@ bundle_dir = Path(__file__).parent
 path_to_img = Path.cwd() / bundle_dir / "img"
 
 
+# qt treewidget class extension
 class MyTreeWidget(QTreeWidget):
     itemSelectionChanged = pyqtSignal()
     aaa= pyqtSignal()

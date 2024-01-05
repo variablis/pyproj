@@ -1,18 +1,19 @@
 import numpy as np
 import json
-from drw_classes import Point
+from dc_point import Point
+from df_math import points_to_distance, points_to_angle
 
 from pathlib import Path
 bundle_dir = Path(__file__).parent
 path_to_dat = Path.cwd() / bundle_dir / "msdf"
 
+
+# class for msdf generated text conversion to quad vertices
 class TextData:
     
-    # Opening JSON file
+    # open generated msdf font json file
     f = open(path_to_dat / "fonts.json")
-    # returns JSON object as # a dictionary
     fdata = json.load(f)
-    # Closing file
     f.close()
 
     texts = []
@@ -23,6 +24,7 @@ class TextData:
         self.offset = offset
         self.vtx = self.txt2vtx()
 
+    # return array of quad vertices for each char
     def txt2vtx(self):
         image = (256, 256)
         arr=[]
@@ -99,6 +101,19 @@ class TextData:
         cls.texts = tmp
         print(cls.texts)
 
+
+    @classmethod
+    def rebuildAll(cls, linelist):
+        # print(linelist)
+        for line in linelist:
+            p1 = line.points[0]
+            p2 = line.points[1]
+            distance = points_to_distance(p1, p2)
+            degrees = points_to_angle(p1, p2)
+
+            cls.texts.append(cls(f'{round(distance,4):.4f} {round(degrees,2):.2f}°', p1, line.line_id))
+
+
     @classmethod
     def makeBuffer(cls):
 
@@ -119,3 +134,4 @@ class TextData:
     @classmethod
     def printBuffer(cls):
         print(cls.texts)
+

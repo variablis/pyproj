@@ -1,4 +1,5 @@
-from drw_test import *
+from PyQt6.QtWidgets import QApplication
+from dw_mywidget import *
 
 def run_app():
     app = QApplication([])

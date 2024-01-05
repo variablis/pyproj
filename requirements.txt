@@ -1,0 +1,5 @@
+moderngl==5.8.2
+numpy==1.26.3
+Pillow==10.2.0
+PyQt6==6.6.1
+pyrr==0.10.3

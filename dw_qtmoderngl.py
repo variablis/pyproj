@@ -1,6 +1,6 @@
-from PyQt6 import QtCore
+# from PyQt6 import QtCore
 from PyQt6.QtOpenGLWidgets import QOpenGLWidget
-from PyQt6.QtGui import QSurfaceFormat
+# from PyQt6.QtGui import QSurfaceFormat
 
 import moderngl
 

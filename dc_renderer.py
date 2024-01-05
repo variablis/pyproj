@@ -1,17 +1,13 @@
-# renderer_example.py
-
 import moderngl
-
-import os
-from PIL import Image
 import numpy as np
-import json
+from PIL import Image
+from pyrr import Matrix44
 from pathlib import Path
 
-from pyrr import Matrix44
-import math
-
-from drw_classes import Point
+# import os
+# import json
+# import math
+# from drw_classes import Point
 
 from pathlib import Path
 bundle_dir = Path(__file__).parent
