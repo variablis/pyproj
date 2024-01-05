@@ -1,5 +1,6 @@
-from PyQt6.QtWidgets import QApplication, QMainWindow, QToolBar, QFileDialog, QSplitter
-from PyQt6.QtGui import QSurfaceFormat
+from PyQt6.QtWidgets import QApplication, QMainWindow, QToolBar, QFileDialog, QSplitter, QLineEdit,QLabel
+from PyQt6.QtGui import QSurfaceFormat, QRegularExpressionValidator
+from PyQt6.QtCore import QRegularExpression
 
 import json
 
@@ -74,10 +75,33 @@ class MyMainWindow(QMainWindow):
         # toggle_dimensions.triggered.connect()
         toolbar2.addAction(toggle_dimensions)
 
+ 
+        lbl_integer = QLabel("Grid: ", self)
+        self.input_gridsize = QLineEdit(self)
+        self.input_gridsize.setMaximumWidth(25)
+
+        # Create a QIntValidator to allow only integer input
+        rgx = QRegularExpression("^[1-9][0-9]?$|^100$")
+        self.rx = QRegularExpressionValidator(rgx, self)
+        self.input_gridsize.setValidator(self.rx)
+
+        self.input_gridsize.setText("10")
+        self.input_gridsize.textChanged[str].connect(self.onChanged)
+
+        toolbar2.addWidget(lbl_integer)
+        toolbar2.addWidget(self.input_gridsize)
+
 
         self.addToolBar(toolbar)
         self.addToolBar(toolbar2)
         
+    def onChanged(self, text):
+        if text:
+            self.mywidget.scene.setGrid(int(text))
+            self.mywidget.update()
+
+
+
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_Delete:

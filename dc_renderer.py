@@ -15,11 +15,7 @@ bundle_dir = Path(__file__).parent
 path_to_sh = Path.cwd() / bundle_dir / "shaders"
 path_to_msdf = Path.cwd() / bundle_dir / "msdf"
 
-def grid(size, steps):
-    u = np.repeat(np.linspace(-size, size, steps), 2)
-    v = np.tile([-size, size], steps)
-    w = np.zeros(steps * 2)
-    return np.concatenate([np.dstack([u, v, w]), np.dstack([v, u, w])])
+
 
 
 class Renderer:
@@ -83,7 +79,10 @@ class Renderer:
         )
 
         
-        self.vbo4 = ctx.buffer(grid(100, 2500).astype('f4'))
+        # self.vbo4 = ctx.buffer(self.grid(100, 2500).astype('f4'))
+        self.vbo4 = ctx.buffer(reserve='4MB', dynamic=True)
+        self.vbo4.write(self.grid(100, 25*100).astype('f4'))
+
         # self.vbo4 = ctx.buffer(np.array([[[-1,-1],[0,0]],[[-1,-2],[1,1]]]).astype('f4'))
         self.vao4 = ctx.vertex_array(self.prog4, self.vbo4, 'in_vert')
         self.mvp4 = self.prog4['mvp']
@@ -145,6 +144,21 @@ class Renderer:
             # text render
         
         self.vbo3 = ctx.buffer(reserve='4MB', dynamic=True)
+    
+    def grid(self, size, steps):
+        u = np.repeat(np.linspace(-size, size, steps), 2)
+        v = np.tile([-size, size], steps)
+        w = np.zeros(steps * 2)
+        return np.concatenate([np.dstack([u, v, w]), np.dstack([v, u, w])])
+    
+    def setGrid(self, step):
+        newgrid = self.grid(100, step*100).astype('f4')
+        self.vbo4.clear()
+        self.vbo4.write(newgrid)
+
+        # self.vao4.render(moderngl.LINES)
+        
+    
     def textrender(self, pts):
         # pass
         if pts.size:
@@ -244,22 +258,6 @@ class Renderer:
         self.gridop.write(np.array(self.clamp(zf,0,1)).astype('f4'))
 
 
-    def circl(self, pts):
-        # data = pts.astype('f4').tobytes()
-
-        # print(pts)
-        # self.vbo2.orphan()
-
-        # for i in range(0, len(pts)):
-        #     self.vbo2.orphan()
-        #     self.vbo2.write(data)
-
-        #     self.vao2.render(moderngl.TRIANGLE_FAN, first=i*6, vertices=6)
-
-
-
-        # print(len(pts))
-        pass
 
     def zom(self, z):
         # self.prog['Zoo'].value = z
