@@ -2,10 +2,12 @@ from PyQt6.QtWidgets import QApplication, QTreeWidget, QTreeWidgetItem
 from PyQt6.QtGui import QIcon
 from PyQt6.QtCore import Qt, pyqtSignal
 
+from pathlib import Path
+
 from dc_linedata import LineData, Group
 
 
-from pathlib import Path
+# absolute path needed for pyinstaller
 bundle_dir = Path(__file__).parent
 path_to_img = Path.cwd() / bundle_dir / "img"
 

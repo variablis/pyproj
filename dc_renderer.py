@@ -9,7 +9,8 @@ from pathlib import Path
 # import math
 # from drw_classes import Point
 
-from pathlib import Path
+
+# absolute path needed for pyinstaller
 bundle_dir = Path(__file__).parent
 path_to_sh = Path.cwd() / bundle_dir / "shaders"
 path_to_msdf = Path.cwd() / bundle_dir / "msdf"
@@ -21,7 +22,7 @@ def grid(size, steps):
     return np.concatenate([np.dstack([u, v, w]), np.dstack([v, u, w])])
 
 
-class HelloWorld2D:
+class Renderer:
     def __init__(self, ctx, reserve='4MB'):
 
         self.ppp=(0,0)

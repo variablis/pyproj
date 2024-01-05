@@ -1,25 +1,21 @@
-import json
-from pathlib import Path
-
-from PyQt6.QtGui import QSurfaceFormat
-from PyQt6.QtWidgets import QMainWindow, QToolBar, QFileDialog, QSplitter
 from PyQt6.QtGui import QAction, QCursor, QIcon
 from PyQt6.QtCore import Qt, QTimer
 
+from pathlib import Path
+
 from dw_qtmoderngl import ModernGLWidget
-from dc_renderer import HelloWorld2D, PanTool
+from dc_renderer import Renderer, PanTool
 
 from dc_point import Point
-from dw_tree import MyTreeWidget
+
 from dc_linedata import LineData, Group
 from dc_text import TextData
 from df_math import *
 
 from dc_linesegment import LineSegment, linedrag, linestopdrag, check_dr_point, checkclickedpoint, checkpoint
 
-from pathlib import Path
 
-
+# absolute path needed for pyinstaller
 bundle_dir = Path(__file__).parent
 path_to_img = Path.cwd() / bundle_dir / "img"
 
@@ -56,7 +52,7 @@ class MyWidget(ModernGLWidget):
     def init(self):
         # self.resize(512, 512) shis ir qt mainwindow resizers
         self.ctx.viewport = (0, 0, 512, 512)
-        self.scene = HelloWorld2D(self.ctx)
+        self.scene = Renderer(self.ctx)
 
 
     def render(self):
@@ -175,141 +171,7 @@ class MyWidget(ModernGLWidget):
         self.update()
 
 
-    def resetAll(self):
-        # reset all
-        LineData.idx=0
-        LineData.lines=[]
-        TextData.texts=[]
-        self.scene.bufcl()
 
-        LineData.root.remove_root_children()
-        LineData.treewidget.build_hierarchy(Group.getRoot())
-
-        self.update()
-
-
-    def newFile(self):
-        self.resetAll()
-        # print('new file...')
-
-
-    def openFile(self):
-        home_dir = str(Path.cwd())
-        fname = QFileDialog.getOpenFileName(self, 'Open file', home_dir)
-
-        if fname[0]:
-            f = open(fname[0], 'r')
-            # data = f.read()
-            data = json.load(f)
-
-            self.resetAll()
-
-            r=Group.createGroupFromJson(data)
-            LineData.root=r
-            # LineData.printData()
-            TextData.rebuildAll(LineData.getData())
-            LineData.treewidget.build_hierarchy(r)
-
-
-    def saveFile(self):
-        home_dir = str(Path.cwd())
-        fname = QFileDialog.getSaveFileName(self, 'Open file', home_dir, '*.drw')
-
-        # print(Group.hierarchyToJson())
-        
-        if fname[0]:
-            f = open(fname[0], 'w')
-            # f.write()
-            # json.dump([obj.__dict__ for obj in LineData.getData()], f)
-            json.dump(Group.hierarchyToJson(), f, indent=2)
-            # print('saved file...')
 
             
-
-class MyMainWindow(QMainWindow):
-    def __init__(self):
-        super().__init__()
-
-            
-        fmt = QSurfaceFormat()
-        fmt.setVersion(3, 3)
-        fmt.setSamples(4)  # if you want multi-sampling
-        # QSurfaceFormat.setDefaultFormat(fmt)
-        
-        self.mywidget = MyWidget()
-        self.mywidget.setMouseTracking(True)
-        self.mywidget.setFormat(fmt)
-        self.mywidget.setGeometry(0, 0, 300, 300)
-
-        
-        # window = MyMainWindow()
-        self.setGeometry(100, 100, 512, 512)
-        self.setMouseTracking(True)
-        # window.setCentralWidget(mywidget)
-
-        # Create the layout for the central widget
-        self.tree = MyTreeWidget()
-
-        splitter = QSplitter()
-        splitter.addWidget(self.tree)
-        splitter.addWidget(self.mywidget)
-
-        self.setCentralWidget(splitter)
-        # Set a minimum size for the second widget
-        self.tree.setMinimumWidth(100)
-        self.tree.setMaximumWidth(180)
-
-        root_group = Group.addRoot('Root')
-        LineData.root = root_group
-        LineData.treewidget = self.tree
-        self.tree.build_hierarchy(Group.getRoot())
-        # tree.itemSelectionChanged.connect(tree.on_item_selection_changed)
-        self.tree.itemSelectionChanged.connect(self.mywidget.update)
-        # tree.myf=mywidget
-
-        toolbar = QToolBar()
-        toolbar2 = QToolBar()
-
-        tbtn_new_file = QAction(QIcon(str(path_to_img/"paper.png")), "New", self)
-        tbtn_new_file.triggered.connect(self.mywidget.newFile)
-        toolbar.addAction(tbtn_new_file)
-
-        tbtn_open_file = QAction(QIcon(str(path_to_img/"folder.png")), "Open", self)
-        tbtn_open_file.triggered.connect(self.mywidget.openFile)
-        toolbar.addAction(tbtn_open_file)
-
-        tbtn_save_file = QAction(QIcon(str(path_to_img/"diskete.png")), "Save", self)
-        tbtn_save_file.triggered.connect(self.mywidget.saveFile)
-        toolbar.addAction(tbtn_save_file)
-
-        create_line = QAction("Create Line", self)
-        create_line.setCheckable(True)
-        create_line.toggled.connect(self.mywidget.createlinetool)
-        toolbar2.addAction(create_line)
-
-
-
-        toggle_line = QAction("Toggle lines", self)
-        # toggle_line.triggered.connect()
-        toolbar2.addAction(toggle_line)
-
-
-        self.addToolBar(toolbar)
-        self.addToolBar(toolbar2)
-        
-
-    def keyPressEvent(self, event):
-        if event.key() == Qt.Key.Key_Delete:
-            # print("Delete key pressed!")
-
-            selids=LineData.getSelectedIds()
-            TextData.deleteSelected(selids)
-            LineData.deleteSelected()
-            
-            self.mywidget.scene.bufcl()
-            self.mywidget.update()
-            # self.mywidget.render()
-        else:
-            super().keyPressEvent(event)
-
 

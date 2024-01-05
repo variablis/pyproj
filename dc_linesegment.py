@@ -1,4 +1,3 @@
-
 from dc_linedata import LineData, Group
 from dc_text import TextData
 from dc_point import Point
@@ -59,7 +58,8 @@ class LineSegment:
         if clicks %2:
             LineData.livepoint(Point(cx, cy))
 
-            TextData.update(f'{round(self.distance,4):.4f} {round(self.degrees,2):.2f}°', Point(cx, cy), LineData.getLastElem().line_id)
+            text = f'{round(self.distance,4):.4f} {round(self.degrees,2):.2f}°'
+            TextData.update(text, LineData.getLastElem().points, LineData.getLastElem().line_id)
 
             p1=self.startpoint
             p2=Point(cx, cy)
@@ -85,7 +85,8 @@ class LineSegment:
             # print('segment start--')
             LineData.startline(self.startpoint)
 
-            TextData.add(f'{round(self.distance,4):.4f}', self.startpoint, LineData.getLastElem().line_id)
+            text = f'{round(self.distance,4):.4f} {round(self.degrees,2):.2f}°'
+            TextData.add(text, LineData.getLastElem().points, LineData.getLastElem().line_id)
 
             # TextData.printBuffer()
             # TextData.makeBuffer()
@@ -156,7 +157,7 @@ def linedrag(cx, cy):
 
             # update coresponding text element
             text = f'{round(d.distance,4):.4f} {round(d.angle,2):.2f}°'
-            TextData.update( text, d.mousepos, d.line_id)
+            TextData.update( text, d.points, d.line_id)
 
            
 
