@@ -20,7 +20,6 @@ class LineSegment:
 
 
     def point_add(self, clicks):
-
         if self.toolstate:
             if not clicks %2:
                 print('segment done')
@@ -29,7 +28,8 @@ class LineSegment:
             else:
                 # print("not end")
                 pass
-       
+
+
     def update_points(self, cx, cy, clicks):
         if clicks %2:
             LineData.livepoint(Point(cx, cy))
@@ -39,6 +39,7 @@ class LineSegment:
 
             text = f'{round(distance,4):.2f} {round(angle,2):.2f}°'
             TextData.update(text, LineData.getLastElem().points, LineData.getLastElem().line_id)
+
 
     def create_points(self, cx, cy, clicks):
         if not clicks %2:
@@ -57,6 +58,8 @@ class LineSegment:
             TextData.add(text, LineData.getLastElem().points, LineData.getLastElem().line_id)
 
 
+
+
 def checkpoint(cx, cy):
     for d in LineData.getData():
         a_pt = d.points[0]
@@ -71,6 +74,7 @@ def checkpoint(cx, cy):
             if not d.selected:
                 d.color = [1,0,1,1]
 
+
 def checkclickedpoint(cx, cy):
     for d in LineData.getData():
         a_pt = d.points[0]
@@ -83,7 +87,8 @@ def checkclickedpoint(cx, cy):
             d.selected=True
         else:
             d.selected=False
- 
+
+
 def check_dr_point(cx, cy):
     for d in LineData.getData():
         a_pt = d.points[0]
@@ -106,12 +111,12 @@ def check_dr_point(cx, cy):
                 d.dragobj=2
         else:
             d.dragobj=-1
-                
+
+
 def linedrag(cx, cy):
     for l in LineData.getData():
         if l.drag:
             l.mousepos = Point(cx,cy)
-            # d.mpprint()
             # d.linemove()
             # print(d.dragobj)
             l.pointmove(l.dragobj)
@@ -123,13 +128,13 @@ def linedrag(cx, cy):
             # update coresponding text element
             text = f"{round(distance,4):.2f} {round(angle,2):.2f}°"
             TextData.update( text, l.points, l.line_id)
-         
+
+
 def linestopdrag(cx, cy):
     for l in LineData.getData():
         if l.drag:
             l.drag=False
             l.mousepos =  Point(cx,cy)
-            # l.mpprint()
             print("drag end")
 
 

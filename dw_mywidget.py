@@ -8,7 +8,7 @@ from dc_renderer import Renderer, PanTool
 
 from dc_point import Point
 
-from dc_linedata import LineData
+from dc_linedata import LineData, SceneData
 from dc_text import TextData
 from df_math import *
 
@@ -91,6 +91,10 @@ class MyWidget(ModernGLWidget):
         self.zoomy +=event.angleDelta().y()/120
         self.zfakt=pow(1.4, self.zoomy)
         self.scene.zom(self.zfakt)
+
+        SceneData.zoom_factor=self.zfakt
+        TextData.rebuildAll(True)
+        # print(self.zfakt)
 
         # self.scene.updateMvp(self.zfakt)
 

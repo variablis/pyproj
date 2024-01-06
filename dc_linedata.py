@@ -1,15 +1,13 @@
 import numpy as np
 from df_math import *
 
-# from dc_linesegment import LineSegment
-
 
 # global scene data class
 class SceneData():
     # filename = 'untitled'
     units = 10
     grid = 1
-    # zoom_factor = 1.0
+    zoom_factor = 1.0
     # saved = False
 
 # group class definition for hierarchical grouping

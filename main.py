@@ -17,18 +17,15 @@ class MyMainWindow(QMainWindow):
         fmt = QSurfaceFormat()
         fmt.setVersion(3, 3)
         fmt.setSamples(4)  # if you want multi-sampling
-        # QSurfaceFormat.setDefaultFormat(fmt)
         
         self.mywidget = MyWidget()
         self.mywidget.setMouseTracking(True)
         self.mywidget.setFormat(fmt)
         self.mywidget.setGeometry(0, 0, 300, 300)
 
-        
-        # window = MyMainWindow()
+
         self.setGeometry(100, 100, 512, 512)
         self.setMouseTracking(True)
-        # window.setCentralWidget(mywidget)
 
         # Create the layout for the central widget
         self.tree = MyTreeWidget()
@@ -46,9 +43,8 @@ class MyMainWindow(QMainWindow):
         LineData.root = root_group
         LineData.treewidget = self.tree
         self.tree.build_hierarchy(Group.getRoot())
-        # tree.itemSelectionChanged.connect(tree.on_item_selection_changed)
         self.tree.itemSelectionChanged.connect(self.mywidget.update)
-        # tree.myf=mywidget
+
 
         toolbar = QToolBar()
         toolbar2 = QToolBar()
@@ -114,12 +110,10 @@ class MyMainWindow(QMainWindow):
 
     def onUnitChaged(self):
         selected_value = int(self.input_units.currentText())
-        # print(selected_value)
         SceneData.units = selected_value
         TextData.rebuildAll(clear=True)
         # self.mywidget.scene.bufcl()
         self.mywidget.update()
-        # self.mywidget.render()
         
         
 
@@ -177,7 +171,6 @@ class MyMainWindow(QMainWindow):
     def saveFile(self):
         home_dir = str(Path.cwd())
         fname = QFileDialog.getSaveFileName(self, 'Save file', home_dir, '*.drw')
-
         # print(Group.hierarchyToJson())
         
         if fname[0]:

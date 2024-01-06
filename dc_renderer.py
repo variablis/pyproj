@@ -21,9 +21,9 @@ class Renderer:
 
         # lines shaders
         self.prog = self.ctx.program(
-            vertex_shader=(path_to_sh/'hello.vert').read_text(),
-            geometry_shader=(path_to_sh/'hello.geom').read_text(),
-            fragment_shader=(path_to_sh/'hello.frag').read_text()
+            vertex_shader=(path_to_sh/'lines.vert').read_text(),
+            geometry_shader=(path_to_sh/'lines.geom').read_text(),
+            fragment_shader=(path_to_sh/'lines.frag').read_text()
         )
         self.vbo = ctx.buffer(reserve='4MB', dynamic=True)
         self.vao = ctx.vertex_array(self.prog, [(self.vbo, '2f 4f', 'in_vert', 'in_color')])
@@ -40,7 +40,7 @@ class Renderer:
         self.vbo2 = ctx.buffer(reserve='4MB', dynamic=True)
         self.vao2 = ctx.vertex_array(self.prog2, self.vbo2, 'in_vert', 'in_color')
         self.mvp2 = self.prog2['mvp']
-        self.zoomfact = self.prog2['zoomfact']
+        self.zf2 = self.prog2['zoomfact']
 
 
         # grid shaders
@@ -73,7 +73,7 @@ class Renderer:
 
         self.vao4 = ctx.vertex_array(self.prog4, self.vbo4, 'in_vert')
         self.mvp4 = self.prog4['mvp']
-        self.gridop = self.prog4['gridopacity']
+        self.grid_opacity = self.prog4['gridopacity']
 
 
         # msdf font shaders
@@ -83,6 +83,8 @@ class Renderer:
         )
         self.vbo3 = ctx.buffer(reserve='4MB', dynamic=True)
         self.mvp3 = self.prog3['mvp']
+        # self.zf3 = self.prog3['zoomfac']
+
 
         # font texture
         img = Image.open(path_to_msdf / "fonts.bmp").convert('RGB')
@@ -90,7 +92,7 @@ class Renderer:
         self.s1 = self.ctx.sampler()
         self.s1.texture = self.tex0
         
-    
+        
         
     def grid(self, unit, size):
         gsize = unit*size
@@ -118,34 +120,19 @@ class Renderer:
         
     
     def textrender(self, pts):
-        # pass
         if pts.size:
             self.s1.use()
-            # self.tex0.use()
-            # print(pts)
-
-            
             data = pts.astype('f4').tobytes()
             self.vbo3.orphan()
             self.vbo3.write(data)
-            # vbo3 = self.ctx.buffer(data)
-
-            # print(pts.size)
+     
             rectangle_pattern = np.array([0, 1, 2,  0, 2, 3], dtype='i4')
             indices = np.tile(rectangle_pattern, pts.size//16 ) + np.repeat(np.arange(0, pts.size//16  * 4, 4), 6)
-            # print(indices)
-            
-            # self.ibo.orphan()
-            ibox = self.ctx.buffer(indices.tobytes()) 
-
-            vaox = self.ctx.vertex_array(self.prog3, [(self.vbo3, '2f 2f', 'in_vert', 'tex_coord')], ibox)
-
-
-            # self.vao3.transform(self.vbo2)
-
-         
+            ibo = self.ctx.buffer(indices.tobytes()) 
+            vaox = self.ctx.vertex_array(self.prog3, [(self.vbo3, '2f 2f', 'in_vert', 'tex_coord')], ibo)
             vaox.render()
 
+          
 
     # clear line and text buffer
     def bufcl(self):
@@ -191,7 +178,6 @@ class Renderer:
             (self.ppp[0], self.ppp[1], 0.0),
             (0.0, -1.0, 0),
         )
-        # print(self.zomf)
 
         self.mvp1.write((proj * lookat).astype('f4'))
         self.mvp2.write((proj * lookat).astype('f4'))
@@ -199,10 +185,9 @@ class Renderer:
         self.mvp4.write((proj * lookat).astype('f4'))
 
         self.viewport.write(np.array([windw, windh]).astype('f4'))
-        self.zoomfact.value =zf
+        self.zf2.value =zf
 
-        # print(zf)
-        self.gridop.write(np.array(self.clamp(zf,0,1)).astype('f4'))
+        self.grid_opacity.write(np.array(self.clamp(zf,0,1)).astype('f4'))
 
 
 
@@ -210,10 +195,6 @@ class Renderer:
         # self.prog['Zoo'].value = z
         self.zomf=z
         # pass
-
-    # def mp(self, po):
-    #     # self.prog['mp'].value = po
-    #     pass
     
     def pan(self, pos):
         # self.prog['Pan'].value = pos
@@ -221,9 +202,6 @@ class Renderer:
         # pass
 
     def clear(self, color=(0.0, .1, 0.1, 0)):
-        # fbo1 = self.ctx.framebuffer(self.ctx.renderbuffer((512, 512), samples=4))
-        # fbo1.use()
-        
         self.ctx.enable(moderngl.DEPTH_TEST)
         self.ctx.enable(moderngl.BLEND)
 
