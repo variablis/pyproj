@@ -54,22 +54,6 @@ class MyTreeWidget(QTreeWidget):
 
         self.expandAll()
 
-    # def on_item_selection_changed(self):
-        # print("called")
-        # pass
-        # sel=self.selectedItems()
-        # if sel:
-        #     print(int(sel[0].data(1,0)))
-        #     sl=LineData.getOneData(int(sel[0].data(1,0)))
-        #     sl.color=[1,1,0,1]
-        #     sl.selected=True
-            # LineData.makeBuffer()
-        
- 
-    # def keyPressEvent(self, event):
-    #     if event.key()==Qt.Key.Key_Control:
-    #         print('ctrl')
-
 
     def mouseReleaseEvent(self ,event):
         ctrl_pressed = QApplication.keyboardModifiers() == Qt.KeyboardModifier.ControlModifier
@@ -107,64 +91,3 @@ class MyTreeWidget(QTreeWidget):
 
             self.itemSelectionChanged.emit()
             # self.myf.update()
-
-
-
-
-# root_group = Group.addRoot('Root')
-
-# for i in range(0,6):
-#     obj = Object("Object "+str(i))
-#     root_group.add_child(obj)
-
-
-# # Create a child group
-# child_group = Group("Child Group")
-# child_group2 = Group("Child Group 2")
-# child_group3 = Group("Child Group 3")
-
-# for i in range(0,20):
-#     obj = Object("Object "+str(i))
-#     child_group2.add_child(obj)
-
-# # Add the child group to the root group
-# # root_group.add_child(child_group)
-# # root_group.add_child(child_group2)
-
-# child_group2.add_child(child_group3)
-
-# object3 = Object("Object 3")
-# # Add an object to the child group
-# child_group.add_child(object3)
-
-
-# class MainWindow(QMainWindow):
-#     def __init__(self):
-#         super().__init__()
-
-#         self.setWindowTitle("Hierarchy Viewer")
-#         self.setGeometry(100, 100, 800, 600)
-
-#         self.central_widget = QWidget(self)
-#         self.setCentralWidget(self.central_widget)
-
-#         self.layout = QVBoxLayout(self.central_widget)
-
-#         # Create the tree widget
-#         self.tree_widget = MyTreeWidget()
-#         self.layout.addWidget(self.tree_widget)
-
-#         # Build the hierarchy in the tree widget
-#         self.tree_widget.build_hierarchy(Group.getRoot())
-
-#         # Expand all items
-#         self.tree_widget.expandAll()
-
-#         # self.root_group.print_hierarchy()
-
-
-# if __name__ == "__main__":
-#     app = QApplication([])
-#     window = MainWindow()
-#     window.show()
-#     app.exec()

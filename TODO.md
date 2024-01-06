@@ -2,7 +2,6 @@
 
 ### Tasks
 - [ ] Toggle dimensions visibility
-- [ ] Set global scene units
 - [ ] Constraints
  - [ ] Lock position
  - [ ] Set and lock angle between two lines
@@ -17,6 +16,7 @@
  - [ ] Selection box
 
 ### Completed ✓
+- [x] Set global scene units
 - [x] Set dimensions at line center with offset along normal
 - [x] Rebuild all line text on file open
 - [x] Buffer clearing on line deletion

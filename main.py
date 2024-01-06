@@ -1,12 +1,11 @@
-from PyQt6.QtWidgets import QApplication, QMainWindow, QToolBar, QFileDialog, QSplitter, QLineEdit,QLabel,QComboBox
-from PyQt6.QtGui import QSurfaceFormat, QRegularExpressionValidator
+from PyQt6.QtWidgets import QApplication, QMainWindow, QToolBar, QFileDialog, QSplitter, QLineEdit, QLabel, QComboBox
+from PyQt6.QtGui import QSurfaceFormat, QRegularExpressionValidator, QIcon, QAction
 from PyQt6.QtCore import QRegularExpression
 
 import json
 
 from dw_mywidget import *
 from dw_tree import MyTreeWidget
-
 from dc_linedata import Group, SceneData
 
 
@@ -16,7 +15,7 @@ class MyMainWindow(QMainWindow):
 
         fmt = QSurfaceFormat()
         fmt.setVersion(3, 3)
-        fmt.setSamples(4)  # if you want multi-sampling
+        fmt.setSamples(4)  # multi-sampling
         
         self.mywidget = MyWidget()
         self.mywidget.setMouseTracking(True)
@@ -67,10 +66,10 @@ class MyMainWindow(QMainWindow):
         toolbar2.addAction(create_line)
 
 
-        toggle_dimensions = QAction("Toggle dimensions", self)
+        # toggle_dimensions = QAction("Toggle dimensions", self)
         # toggle_dimensions.setCheckable(True)
         # toggle_dimensions.triggered.connect()
-        toolbar2.addAction(toggle_dimensions)
+        # toolbar2.addAction(toggle_dimensions)
 
         # Create a QIntValidator to allow only integer input
         rgx = QRegularExpression("^[1-9][0-9]?$|^100$")
@@ -133,7 +132,6 @@ class MyMainWindow(QMainWindow):
 
 
     def resetAll(self):
-        # reset all
         LineData.idx=0
         LineData.lines=[]
         TextData.texts=[]
@@ -160,7 +158,6 @@ class MyMainWindow(QMainWindow):
             data = json.load(f)
 
             self.resetAll()
-
             r=Group.createGroupFromJson(data)
             LineData.root=r
             # LineData.printData()
@@ -175,8 +172,6 @@ class MyMainWindow(QMainWindow):
         
         if fname[0]:
             f = open(fname[0], 'w')
-            # f.write()
-            # json.dump([obj.__dict__ for obj in LineData.getData()], f)
             json.dump(Group.hierarchyToJson(), f, indent=2)
             # print('saved file...')
 

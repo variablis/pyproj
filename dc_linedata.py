@@ -151,7 +151,7 @@ class LineData(Object):
         p1orig = actline.points[0]
         p2orig = actline.points[1]
 
-        # kapec p1orig nav point klasae??
+        # kapec p1orig nav point klasee??
         # print(p1orig)
 
         # Calculate the change in mouse position

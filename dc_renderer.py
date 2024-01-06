@@ -149,10 +149,12 @@ class Renderer:
         self.vbo.write(data)
         self.vao.render(moderngl.LINES)
 
-        # circle shader test
-        self.vbo2.orphan()
-        self.vbo2.write(data)
-        self.vao2.render(moderngl.POINTS)
+        # circle shader
+        if pts.size:
+            # print(pts.tolist())
+            self.vbo2.orphan()
+            self.vbo2.write(data)
+            self.vao2.render(moderngl.POINTS)
 
         self.vao4.render(moderngl.LINES)
 

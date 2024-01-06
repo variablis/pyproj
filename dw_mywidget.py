@@ -1,17 +1,14 @@
-from PyQt6.QtGui import QAction, QCursor, QIcon
+from PyQt6.QtGui import QCursor
 from PyQt6.QtCore import Qt, QTimer
 
 from pathlib import Path
 
 from dw_qtmoderngl import ModernGLWidget
 from dc_renderer import Renderer, PanTool
-
 from dc_point import Point
-
 from dc_linedata import LineData, SceneData
 from dc_text import TextData
 from df_math import *
-
 from dc_linesegment import LineSegment, linedrag, linestopdrag, check_dr_point, checkclickedpoint, checkpoint
 
 
@@ -34,6 +31,7 @@ def normalized_coordinates(mouse_pt, window_size, zoom_factor):
     return normalized_x, normalized_y
 
 
+# main opengl widget
 class MyWidget(ModernGLWidget):
     def __init__(self):
         super(MyWidget, self).__init__()
@@ -71,8 +69,7 @@ class MyWidget(ModernGLWidget):
         # pozicija tiek nolasita pa visu ekranu!!
         local_pos = self.mapFromGlobal(QCursor.pos())
  
-        mousepos = Point(local_pos.x()/ 512/self.zfakt, 
-                         local_pos.y()/ 512/self.zfakt)
+        mousepos = Point(local_pos.x()/ 512/self.zfakt, local_pos.y()/ 512/self.zfakt)
         return mousepos
     
     def createlinetool(self, checked):
@@ -81,11 +78,11 @@ class MyWidget(ModernGLWidget):
         lseg.tool_active(checked)
 
 
-    # def resizeEvent(self, event):
-        # print("resize")
-        # if self.scene:
-            # self.scene.updateMvp(self.zfakt)
-
+    # clear focus of QLineEdit
+    def clear_input_focus(self):
+        # mywidget -> qsplitter -> mainwindow
+        self.parent().parent().input_gridsize.clearFocus()
+        
         
     def wheelEvent(self, event):
         self.zoomy +=event.angleDelta().y()/120
@@ -94,23 +91,19 @@ class MyWidget(ModernGLWidget):
 
         SceneData.zoom_factor=self.zfakt
         TextData.rebuildAll(True)
-        # print(self.zfakt)
-
-        # self.scene.updateMvp(self.zfakt)
 
         self.update()
         self.render()
         
 
     def mousePressEvent(self, event):
+        self.clear_input_focus()
+        
         if event.button() == Qt.MouseButton.MiddleButton:
             pan_tool.start_drag(self.mycoord())
             self.scene.pan(pan_tool.value)
         
         if event.button() == Qt.MouseButton.LeftButton:
-            # self.scene.chcol( random.uniform(1, 1))
-
-
 
             if self.createlineactive:
                 lseg.create_points( *normalized_coordinates(self.mycoord(), (self.size().width(), self.size().height()), self.zfakt), self.clickcount)
@@ -122,17 +115,16 @@ class MyWidget(ModernGLWidget):
                 # stulbs workarounds lai izslegtu selekcibju bez peles  kustinasanas
                 checkpoint( *normalized_coordinates(self.mycoord(), (self.size().width(), self.size().height()), self.zfakt) )
                 # Store the initial mouse position for drag calculation
-                # global uds
+
                 self.user_drag_start = self.mycoord()
                 self.uds = self.user_drag_start
        
         self.update()
 
+
     def mouseMoveEvent(self, event):
         pan_tool.dragging(self.mycoord())
         self.scene.pan(pan_tool.value)
-
-        
 
         if self.user_drag_start:
             # Check for ongoing drag operation
@@ -143,7 +135,7 @@ class MyWidget(ModernGLWidget):
                 print("Drag Started")
                 # Reset the drag start position
                 check_dr_point( *normalized_coordinates(self.user_drag_start, (self.size().width(), self.size().height()), self.zfakt) )
-                # global uds
+ 
                 self.user_drag_start = None
                 self.uds = self.user_drag_start 
 
@@ -160,20 +152,15 @@ class MyWidget(ModernGLWidget):
         self.update()
         self.render()
 
+
     def mouseReleaseEvent(self, event):
         pan_tool.stop_drag(self.mycoord())
         self.scene.pan(pan_tool.value)
 
         linestopdrag( *normalized_coordinates(self.mycoord(), (self.size().width(), self.size().height()), self.zfakt) )
 
-        # global uds
         self.user_drag_start = None
         self.uds = self.user_drag_start 
 
         self.update()
-
-
-
-
-            
 

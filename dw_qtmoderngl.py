@@ -8,8 +8,6 @@ class ModernGLWidget(QOpenGLWidget):
 
     def paintGL(self):
         self.ctx = moderngl.create_context()
-
         self.screen = self.ctx.detect_framebuffer()
         self.init()
-        # self.render()
         self.paintGL = self.render
