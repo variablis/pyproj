@@ -2,11 +2,11 @@ import json
 import numpy as np
 from pathlib import Path
 
+from dc_linedata import LineData, SceneData
 from dc_point import Point
-from df_math import points_to_distance, points_to_angle
+from df_math import points_to_angle
 
 import pyrr
-import math
 
 # absolute path needed for pyinstaller
 bundle_dir = Path(__file__).parent
@@ -28,7 +28,6 @@ class TextData:
         self.str = str
         self.pointsarr = points
         self.vtx = self.txt2vtx()
-    
 
     # return array of quad vertices for each char
     def txt2vtx(self):
@@ -157,15 +156,23 @@ class TextData:
 
 
     @classmethod
-    def rebuildAll(cls, linelist):
+    def rebuildAll(cls, clear=False):
         # print(linelist)
-        for line in linelist:
-            p1 = line.points[0]
-            p2 = line.points[1]
-            distance = points_to_distance(p1, p2)
-            degrees = points_to_angle(p1, p2)
 
-            text = f"{round(distance,4):.4f} {round(degrees,2):.2f}°"
+        if clear:
+            cls.texts = []
+
+        for line in LineData.getData():
+            # p1 = line.points[0]
+            # p2 = line.points[1]
+
+            # distance = points_to_distance(p1, p2)
+            # degrees = points_to_angle(p1, p2)
+
+            distance = line.distance *SceneData.units
+            angle = line.angle
+
+            text = f"{round(distance,4):.2f} {round(angle,2):.2f}°"
             cls.texts.append(cls(text, line.points, line.line_id))
 
 

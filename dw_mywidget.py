@@ -8,7 +8,7 @@ from dc_renderer import Renderer, PanTool
 
 from dc_point import Point
 
-from dc_linedata import LineData, Group
+from dc_linedata import LineData
 from dc_text import TextData
 from df_math import *
 
@@ -22,8 +22,6 @@ path_to_img = Path.cwd() / bundle_dir / "img"
 
 pan_tool = PanTool()
 lseg = LineSegment()
-
-uds=None
 
 
 # convert mouse screen pixel coordinates to normalized coordinates -1.0 to 1.0
@@ -44,10 +42,13 @@ class MyWidget(ModernGLWidget):
         self.zoomy = 0
         self.zfakt  =1
 
+        self.uds=None
+
         self.createlineactive=False
         self.clickcount=0
         self.user_drag_start=None
         self.startDragDistance=0.001
+
 
     def init(self):
         # self.resize(512, 512) shis ir qt mainwindow resizers
@@ -60,14 +61,10 @@ class MyWidget(ModernGLWidget):
         self.screen.use()
         self.scene.clear()
 
-        # self.scene.textgen(str(lseg.distance)+'...'+str(lseg.degrees), lseg.startpoint)
-        
         self.scene.updateMvp(self.zfakt)
-
         self.scene.textrender(TextData.makeBuffer())
         self.scene.linerender(LineData.makeBuffer())
-        # self.scene.circl(np.array(livecircles))
-        
+   
 
     def mycoord(self):
         # origin ir main windowa kreisais augsejais sturis 0,0
@@ -112,7 +109,7 @@ class MyWidget(ModernGLWidget):
 
 
             if self.createlineactive:
-                lseg.create_points(self.mycoord(), self.clickcount, self.size(), pan_tool.value, self.zfakt)
+                lseg.create_points( *normalized_coordinates(self.mycoord(), (self.size().width(), self.size().height()), self.zfakt), self.clickcount)
                 self.clickcount+=1
                 lseg.point_add(self.clickcount)
             else:
@@ -121,9 +118,9 @@ class MyWidget(ModernGLWidget):
                 # stulbs workarounds lai izslegtu selekcibju bez peles  kustinasanas
                 checkpoint( *normalized_coordinates(self.mycoord(), (self.size().width(), self.size().height()), self.zfakt) )
                 # Store the initial mouse position for drag calculation
-                global uds
+                # global uds
                 self.user_drag_start = self.mycoord()
-                uds = self.user_drag_start
+                self.uds = self.user_drag_start
        
         self.update()
 
@@ -142,14 +139,15 @@ class MyWidget(ModernGLWidget):
                 print("Drag Started")
                 # Reset the drag start position
                 check_dr_point( *normalized_coordinates(self.user_drag_start, (self.size().width(), self.size().height()), self.zfakt) )
-                global uds
+                # global uds
                 self.user_drag_start = None
-                uds = self.user_drag_start 
+                self.uds = self.user_drag_start 
 
         if self.createlineactive:
             
 
-            lseg.update_points(self.mycoord(), self.clickcount, self.size(), pan_tool.value, self.zfakt)
+            # lseg.update_points(self.mycoord(), self.clickcount, self.size(), pan_tool.value, self.zfakt)
+            lseg.update_points(*normalized_coordinates(self.mycoord(), (self.size().width(), self.size().height()), self.zfakt), self.clickcount)
         else:
             checkpoint( *normalized_coordinates(self.mycoord(), (self.size().width(), self.size().height()), self.zfakt) )
             linedrag( *normalized_coordinates(self.mycoord(), (self.size().width(), self.size().height()), self.zfakt) )
@@ -164,9 +162,9 @@ class MyWidget(ModernGLWidget):
 
         linestopdrag( *normalized_coordinates(self.mycoord(), (self.size().width(), self.size().height()), self.zfakt) )
 
-        global uds
+        # global uds
         self.user_drag_start = None
-        uds = self.user_drag_start 
+        self.uds = self.user_drag_start 
 
         self.update()
 

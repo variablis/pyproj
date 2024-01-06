@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QApplication, QMainWindow, QToolBar, QFileDialog, QSplitter, QLineEdit,QLabel
+from PyQt6.QtWidgets import QApplication, QMainWindow, QToolBar, QFileDialog, QSplitter, QLineEdit,QLabel,QComboBox
 from PyQt6.QtGui import QSurfaceFormat, QRegularExpressionValidator
 from PyQt6.QtCore import QRegularExpression
 
@@ -7,12 +7,13 @@ import json
 from dw_mywidget import *
 from dw_tree import MyTreeWidget
 
+from dc_linedata import Group, SceneData
+
 
 class MyMainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-            
         fmt = QSurfaceFormat()
         fmt.setVersion(3, 3)
         fmt.setSamples(4)  # if you want multi-sampling
@@ -75,33 +76,52 @@ class MyMainWindow(QMainWindow):
         # toggle_dimensions.triggered.connect()
         toolbar2.addAction(toggle_dimensions)
 
- 
-        lbl_integer = QLabel("Grid: ", self)
-        self.input_gridsize = QLineEdit(self)
-        self.input_gridsize.setMaximumWidth(25)
-
         # Create a QIntValidator to allow only integer input
         rgx = QRegularExpression("^[1-9][0-9]?$|^100$")
+ 
+
+        label_grid = QLabel("Grid: ", self)
+        self.input_gridsize = QLineEdit(self)
+        self.input_gridsize.setMaximumWidth(28)
         self.rx = QRegularExpressionValidator(rgx, self)
         self.input_gridsize.setValidator(self.rx)
-
-        self.input_gridsize.setText("10")
+        self.input_gridsize.setText("1")
         self.input_gridsize.textChanged[str].connect(self.onChanged)
 
-        toolbar2.addWidget(lbl_integer)
+        toolbar2.addWidget(label_grid)
         toolbar2.addWidget(self.input_gridsize)
+
+
+        label_units = QLabel("Scene units: ", self)
+        self.input_units = QComboBox(self)
+        self.input_units.addItems(["1", "10", "100", "1000"])
+        self.input_units.setCurrentIndex(1)
+        self.input_units.currentIndexChanged.connect(self.onUnitChaged)
+
+
+        toolbar2.addWidget(label_units)
+        toolbar2.addWidget(self.input_units)
 
 
         self.addToolBar(toolbar)
         self.addToolBar(toolbar2)
         
+
     def onChanged(self, text):
         if text:
             self.mywidget.scene.setGrid(int(text))
             self.mywidget.update()
 
-
-
+    def onUnitChaged(self):
+        selected_value = int(self.input_units.currentText())
+        # print(selected_value)
+        SceneData.units = selected_value
+        TextData.rebuildAll(clear=True)
+        # self.mywidget.scene.bufcl()
+        self.mywidget.update()
+        # self.mywidget.render()
+        
+        
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_Delete:
@@ -150,7 +170,7 @@ class MyMainWindow(QMainWindow):
             r=Group.createGroupFromJson(data)
             LineData.root=r
             # LineData.printData()
-            TextData.rebuildAll(LineData.getData())
+            TextData.rebuildAll()
             LineData.treewidget.build_hierarchy(r)
 
 
@@ -171,6 +191,7 @@ class MyMainWindow(QMainWindow):
 
 if __name__ == "__main__":
     app = QApplication([])
+    app.setStyle("fusion")
     window = MyMainWindow()
     window.show()
     app.exec()

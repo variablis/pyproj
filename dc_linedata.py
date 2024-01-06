@@ -1,6 +1,16 @@
 import numpy as np
 from df_math import *
 
+# from dc_linesegment import LineSegment
+
+
+# global scene data class
+class SceneData():
+    # filename = 'untitled'
+    units = 10
+    grid = 1
+    # zoom_factor = 1.0
+    # saved = False
 
 # group class definition for hierarchical grouping
 class Group:
@@ -131,8 +141,8 @@ class LineData(Object):
         
         self.dragobj=-1
 
-
         self.name=name
+
 
     def mpprint(self):
         print("inf:", self.line_id, self.mousepos.get(), self.drag)
@@ -205,22 +215,28 @@ class LineData(Object):
     @classmethod
     def livepoint(cls, livepoint):
         if cls.lines:
-            cls.lines[-1].points[1] = livepoint
+            lastline = cls.lines[-1]
+            lastline.points[1] = livepoint
+
+            lastline.distance = points_to_distance(lastline.points[0], lastline.points[1])
+            lastline.angle = points_to_angle(lastline.points[0], lastline.points[1])
         # pass
 
     @classmethod
-    def add(cls, endpoint, distance, angle, color=[1,1,1,1]):
+    def add(cls, endpoint, color=[1,1,1,1]):
 
         if cls.lines:
-            cls.lines[-1].points[1] = endpoint
-            cls.lines[-1].color = color
-            cls.lines[-1].distance = distance
-            cls.lines[-1].angle = angle
+            lastline = cls.lines[-1]
+            lastline.points[1] = endpoint
+            lastline.color = color
+
+            lastline.distance = points_to_distance(lastline.points[0], lastline.points[1])
+            lastline.angle = points_to_angle(lastline.points[0], lastline.points[1])
 
 
-            cls.lines[-1].name = str(cls.lines[-1].line_id) + ' - line'
+            lastline.name = str(lastline.line_id) + ' - line'
             
-            cls.root.add_child(cls.lines[-1])
+            cls.root.add_child(lastline)
             cls.treewidget.build_hierarchy(cls.root)
   
     @classmethod
@@ -307,5 +323,3 @@ class LineData(Object):
                 name = name
             )
         )
-
-        

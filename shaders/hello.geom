@@ -3,7 +3,7 @@
 layout (lines) in;                              // now we can access 2 vertices
 layout (triangle_strip, max_vertices = 4) out;  // always (for now) producing 2 triangles (so 4 vertices)
 
-uniform vec2  u_viewportSize = vec2(512,512);
+// uniform vec2  u_viewportSize = vec2(512,512);
 uniform vec2  viewportsize;
 uniform float u_thickness = 1.25;
 
