@@ -132,12 +132,20 @@ class MyMainWindow(QMainWindow):
         self.mywidget.scene.clear_buffers()
         self.mywidget.update()
 
-        LineData.root.remove_root_children()
+        # LineData.root.remove_root_children()
+        # Group.print_hierarchy(Group.get_root())
+        Group.remove_root_children()
+        
+        
         self.tree.build_hierarchy(Group.get_root())
 
 
     def new_file(self):
         self.reset_all()
+        x=Group.add_root('Root')
+        LineData.root = x
+
+        self.tree.build_hierarchy(Group.get_root())
 
 
     def open_file(self):
