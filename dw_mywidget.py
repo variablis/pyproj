@@ -38,7 +38,7 @@ class MyWidget(ModernGLWidget):
 
         self.scene = None
         self.zoomy = 0
-        self.zfakt  =1
+        self.zfakt = 1
 
         self.uds=None
 
@@ -59,10 +59,10 @@ class MyWidget(ModernGLWidget):
         self.screen.use()
         self.scene.clear()
 
-        self.scene.updateMvp(self.zfakt)
-        self.scene.textrender(TextData.makeBuffer())
-        self.scene.linerender(LineData.makeBuffer())
-   
+        self.scene.update_mvp(self.zfakt)
+        self.scene.line_render(LineData.makeBuffer())
+        self.scene.text_render(TextData.makeBuffer())
+
 
     def mycoord(self):
         # origin ir main windowa kreisais augsejais sturis 0,0
@@ -87,13 +87,12 @@ class MyWidget(ModernGLWidget):
     def wheelEvent(self, event):
         self.zoomy +=event.angleDelta().y()/120
         self.zfakt=pow(1.4, self.zoomy)
-        self.scene.zom(self.zfakt)
 
         SceneData.zoom_factor=self.zfakt
         TextData.rebuildAll(True)
 
         self.update()
-        self.render()
+        # self.render()
         
 
     def mousePressEvent(self, event):
@@ -101,7 +100,6 @@ class MyWidget(ModernGLWidget):
         
         if event.button() == Qt.MouseButton.MiddleButton:
             pan_tool.start_drag(self.mycoord())
-            self.scene.pan(pan_tool.value)
         
         if event.button() == Qt.MouseButton.LeftButton:
 
@@ -124,7 +122,6 @@ class MyWidget(ModernGLWidget):
 
     def mouseMoveEvent(self, event):
         pan_tool.dragging(self.mycoord())
-        self.scene.pan(pan_tool.value)
 
         if self.user_drag_start:
             # Check for ongoing drag operation
@@ -155,7 +152,6 @@ class MyWidget(ModernGLWidget):
 
     def mouseReleaseEvent(self, event):
         pan_tool.stop_drag(self.mycoord())
-        self.scene.pan(pan_tool.value)
 
         linestopdrag( *normalized_coordinates(self.mycoord(), (self.size().width(), self.size().height()), self.zfakt) )
 

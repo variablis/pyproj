@@ -142,9 +142,6 @@ class LineData(Object):
         self.name=name
 
 
-    def mpprint(self):
-        print("inf:", self.line_id, self.mousepos.get(), self.drag)
-
     def linemove(self):
         actline = self.lines[self.line_id]
 
@@ -207,7 +204,6 @@ class LineData(Object):
     def startline(cls, startpoint):
         cls.lines.append(cls( line_id=cls.idx, points=[startpoint, startpoint] ))
         cls.idx +=1
-        
         # print(cls.lines)
 
     @classmethod
@@ -215,10 +211,8 @@ class LineData(Object):
         if cls.lines:
             lastline = cls.lines[-1]
             lastline.points[1] = livepoint
-
             lastline.distance = points_to_distance(lastline.points[0], lastline.points[1])
             lastline.angle = points_to_angle(lastline.points[0], lastline.points[1])
-        # pass
 
     @classmethod
     def add(cls, endpoint, color=[1,1,1,1]):
@@ -227,11 +221,8 @@ class LineData(Object):
             lastline = cls.lines[-1]
             lastline.points[1] = endpoint
             lastline.color = color
-
             lastline.distance = points_to_distance(lastline.points[0], lastline.points[1])
             lastline.angle = points_to_angle(lastline.points[0], lastline.points[1])
-
-
             lastline.name = str(lastline.line_id) + ' - line'
             
             cls.root.add_child(lastline)
@@ -258,9 +249,6 @@ class LineData(Object):
             if elem.line_id==id:
                 return elem
         return None
-            
-        # return next(x for x in cls.lines if x.line_id == id )
-    
 
     @classmethod
     def getSelectedIds(cls):
@@ -276,10 +264,8 @@ class LineData(Object):
     
         tmp = [elem for elem in cls.lines if not elem.selected]
         cls.lines = tmp
-
         # print(cls.lines)
     
-
     @classmethod
     def makeBuffer(cls):
         tmp_list = []
@@ -288,7 +274,6 @@ class LineData(Object):
                 elem.points[0].xy + elem.color,
                 elem.points[1].xy + elem.color
             ])
-
         # print(tmp_list)
         return np.array(tmp_list)
 
@@ -297,7 +282,6 @@ class LineData(Object):
         print(len(cls.lines))
         for elem in cls.lines:
             print(f"Line ID: {elem.line_id}, Point1: {elem.points[0].xy}, Point2: {elem.points[1].xy}, color: {elem.color}")
-
 
     def dataToJson(self):
         return {
@@ -317,7 +301,6 @@ class LineData(Object):
                 angle = angle,
                 color = color,
                 points = [Point(points[0][0], points[0][1]), Point(points[1][0], points[1][1])],
-
                 name = name
             )
         )

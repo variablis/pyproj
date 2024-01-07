@@ -21,5 +21,5 @@ class Point:
     def cross2d(self, other_point):
         return self.x*other_point.y - self.y*other_point.x
 
-    def get(self):
-        return [self.x, self.y]
+    # def get(self):
+    #     return [self.x, self.y]

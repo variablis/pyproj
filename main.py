@@ -60,7 +60,7 @@ class MyMainWindow(QMainWindow):
         tbtn_save_file.triggered.connect(self.saveFile)
         toolbar.addAction(tbtn_save_file)
 
-        create_line = QAction("Create Line", self)
+        create_line = QAction(QIcon(str(path_to_img/"line.png")), "Create line", self)
         create_line.setCheckable(True)
         create_line.toggled.connect(self.mywidget.createlinetool)
         toolbar2.addAction(create_line)
@@ -72,7 +72,7 @@ class MyMainWindow(QMainWindow):
         # toolbar2.addAction(toggle_dimensions)
 
         # Create a QIntValidator to allow only integer input
-        rgx = QRegularExpression("^[1-9][0-9]?$|^100$")
+        rgx = QRegularExpression("[1-9]|1[0-9]|2[0-5]")
  
 
         label_grid = QLabel("Grid: ", self)
@@ -81,7 +81,7 @@ class MyMainWindow(QMainWindow):
         self.rx = QRegularExpressionValidator(rgx, self)
         self.input_gridsize.setValidator(self.rx)
         self.input_gridsize.setText("1")
-        self.input_gridsize.textChanged[str].connect(self.onChanged)
+        self.input_gridsize.textChanged[str].connect(self.onGridChanged)
 
         toolbar2.addWidget(label_grid)
         toolbar2.addWidget(self.input_gridsize)
@@ -102,10 +102,11 @@ class MyMainWindow(QMainWindow):
         self.addToolBar(toolbar2)
         
 
-    def onChanged(self, text):
+    def onGridChanged(self, text):
         if text:
-            self.mywidget.scene.setGrid(int(text))
+            self.mywidget.scene.set_grid(int(text))
             self.mywidget.update()
+
 
     def onUnitChaged(self):
         selected_value = int(self.input_units.currentText())
@@ -113,8 +114,7 @@ class MyMainWindow(QMainWindow):
         TextData.rebuildAll(clear=True)
         # self.mywidget.scene.bufcl()
         self.mywidget.update()
-        
-        
+
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_Delete:
@@ -124,7 +124,7 @@ class MyMainWindow(QMainWindow):
             TextData.deleteSelected(selids)
             LineData.deleteSelected()
             
-            self.mywidget.scene.bufcl()
+            self.mywidget.scene.clear_buffers()
             self.mywidget.update()
             # self.mywidget.render()
         else:
@@ -135,7 +135,7 @@ class MyMainWindow(QMainWindow):
         LineData.idx=0
         LineData.lines=[]
         TextData.texts=[]
-        self.mywidget.scene.bufcl()
+        self.mywidget.scene.clear_buffers()
 
         LineData.root.remove_root_children()
         LineData.treewidget.build_hierarchy(Group.getRoot())

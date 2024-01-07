@@ -4,6 +4,9 @@ from PIL import Image
 from pyrr import Matrix44
 from pathlib import Path
 
+from dc_point import Point
+from df_math import clamp
+
 
 # absolute path needed for pyinstaller
 bundle_dir = Path(__file__).parent
@@ -11,12 +14,10 @@ path_to_sh = Path.cwd() / bundle_dir / "shaders"
 path_to_msdf = Path.cwd() / bundle_dir / "msdf"
 
 
-
+# renderer class
 class Renderer:
     def __init__(self, ctx, reserve='4MB'):
         self.ctx = ctx
-        self.ppp=(0,0)
-        self.zomf=1
 
 
         # lines shaders
@@ -28,7 +29,7 @@ class Renderer:
         self.vbo = ctx.buffer(reserve='4MB', dynamic=True)
         self.vao = ctx.vertex_array(self.prog, [(self.vbo, '2f 4f', 'in_vert', 'in_color')])
         self.mvp1 = self.prog['mvp']
-        self.viewport = self.prog['viewportsize']
+        self.wsize = self.prog['viewportsize']
 
 
         # circles shaders
@@ -38,42 +39,21 @@ class Renderer:
             fragment_shader=Path(path_to_sh/'circle.frag').read_text()
         )
         self.vbo2 = ctx.buffer(reserve='4MB', dynamic=True)
-        self.vao2 = ctx.vertex_array(self.prog2, self.vbo2, 'in_vert', 'in_color')
+        self.vao2 = ctx.vertex_array(self.prog2, [(self.vbo2, '2f 4f', 'in_vert', 'in_color')])
         self.mvp2 = self.prog2['mvp']
         self.zf2 = self.prog2['zoomfact']
 
 
         # grid shaders
         self.prog4 = self.ctx.program(
-            vertex_shader='''
-                #version 330
-
-                uniform mat4 mvp;
-
-                in vec2 in_vert;
-
-                void main() {
-                    gl_Position = mvp * vec4(in_vert, 0.0, 1.0);
-                }
-            ''',
-            fragment_shader='''
-                #version 330
-
-                uniform float gridopacity;
-                out vec4 f_color;
-
-                void main() {
-                    f_color = vec4(0.0, 1, 0.3, .2*gridopacity);
-                }
-            ''',
+            vertex_shader=Path(path_to_sh/'grid.vert').read_text(),
+            fragment_shader=Path(path_to_sh/'grid.frag').read_text(),
         )
-
         self.vbo4 = ctx.buffer(reserve='4MB', dynamic=True)
-        self.vbo4.write(self.grid(1, 12))
-
+        self.vbo4.write(self.make_grid(1, 12))
         self.vao4 = ctx.vertex_array(self.prog4, self.vbo4, 'in_vert')
         self.mvp4 = self.prog4['mvp']
-        self.grid_opacity = self.prog4['gridopacity']
+        self.grid_opacity = self.prog4['opacity']
 
 
         # msdf font shaders
@@ -83,8 +63,6 @@ class Renderer:
         )
         self.vbo3 = ctx.buffer(reserve='4MB', dynamic=True)
         self.mvp3 = self.prog3['mvp']
-        # self.zf3 = self.prog3['zoomfac']
-
 
         # font texture
         img = Image.open(path_to_msdf / "fonts.bmp").convert('RGB')
@@ -92,14 +70,12 @@ class Renderer:
         self.s1 = self.ctx.sampler()
         self.s1.texture = self.tex0
         
-        
-        
-    def grid(self, unit, size):
+
+    def make_grid(self, unit, size):
         gsize = unit*size
         gstep = unit
 
         u = np.linspace(-gsize, gsize, gsize*2 *gstep +1)
-        # print(u)
 
         ys=np.column_stack((-gsize*np.ones_like(u), u))
         ye=np.column_stack((gsize*np.ones_like(u), u))
@@ -114,12 +90,16 @@ class Renderer:
 
         return grid.astype('f4').tobytes()
     
-    def setGrid(self, unit):
+
+    def set_grid(self, unit):
+        grid = self.make_grid(unit, 12)
         self.vbo4.clear()
-        self.vbo4.write(self.grid(unit, 12))
+        self.vbo4.orphan()
+        self.vbo4.write(grid)
+        self.vao4.render(moderngl.LINES)
         
     
-    def textrender(self, pts):
+    def text_render(self, pts):
         if pts.size:
             self.s1.use()
             data = pts.astype('f4').tobytes()
@@ -129,88 +109,73 @@ class Renderer:
             rectangle_pattern = np.array([0, 1, 2,  0, 2, 3], dtype='i4')
             indices = np.tile(rectangle_pattern, pts.size//16 ) + np.repeat(np.arange(0, pts.size//16  * 4, 4), 6)
             ibo = self.ctx.buffer(indices.tobytes()) 
-            vaox = self.ctx.vertex_array(self.prog3, [(self.vbo3, '2f 2f', 'in_vert', 'tex_coord')], ibo)
-            vaox.render()
+            vao = self.ctx.vertex_array(self.prog3, [(self.vbo3, '2f 2f', 'in_vert', 'tex_coord')], ibo)
+            vao.render()
 
-          
 
-    # clear line and text buffer
-    def bufcl(self):
-        self.vbo.clear()
-        self.vbo2.clear()
-        self.vbo3.clear()
-
-    def clearTextBuffer(self):
-        self.vbo3.clear()
-
-    def linerender(self, pts):
+    def line_render(self, pts):
+        # render lines
         data = pts.astype('f4').tobytes()
         self.vbo.orphan()
         self.vbo.write(data)
         self.vao.render(moderngl.LINES)
 
-        # circle shader
+        # render circles
         if pts.size:
-            # print(pts.tolist())
             self.vbo2.orphan()
             self.vbo2.write(data)
             self.vao2.render(moderngl.POINTS)
 
+        # render grid
         self.vao4.render(moderngl.LINES)
 
 
-    def clamp(self, n, min, max): 
-        if n < min: 
-            return min
-        elif n > max: 
-            return max
-        else: 
-            return n 
+    def update_mvp(self, zf):
+        pan = PanTool.pan_position
 
+        vw = self.ctx.viewport[2]
+        vh = self.ctx.viewport[3]
+        f5 = 512 *zf
 
-    def updateMvp(self, zf):
-
-        windw=self.ctx.viewport[2]
-        windh=self.ctx.viewport[3]
-        f5=512*zf #self.zomf
-
-        proj = Matrix44.orthogonal_projection(-windw/f5, windw/f5, windh/f5, -windh/f5, 0.1, 1000.0)
+        proj = Matrix44.orthogonal_projection(-vw/f5, vw/f5, vh/f5, -vh/f5, 0.1, 1000.0)
         lookat = Matrix44.look_at(
-            (self.ppp[0], self.ppp[1], -1.0),
-            (self.ppp[0], self.ppp[1], 0.0),
+            (pan.x, pan.y, -1.0),
+            (pan.x, pan.y, 0.0),
             (0.0, -1.0, 0),
         )
-
+        self.mvp4.write((proj * lookat).astype('f4'))
         self.mvp1.write((proj * lookat).astype('f4'))
         self.mvp2.write((proj * lookat).astype('f4'))
         self.mvp3.write((proj * lookat).astype('f4'))
-        self.mvp4.write((proj * lookat).astype('f4'))
+        
 
-        self.viewport.write(np.array([windw, windh]).astype('f4'))
-        self.zf2.value =zf
+        self.wsize.write(np.array([vw, vh]).astype('f4'))
+        self.zf2.value = zf
 
-        self.grid_opacity.write(np.array(self.clamp(zf,0,1)).astype('f4'))
+        self.grid_opacity.write(np.array(clamp(zf,0,1)).astype('f4'))
 
 
+    # clear line and text buffer
+    def clear_buffers(self):
+        self.vbo.clear()
+        self.vbo2.clear()
+        self.vbo3.clear()
 
-    def zom(self, z):
-        # self.prog['Zoo'].value = z
-        self.zomf=z
-        # pass
-    
-    def pan(self, pos):
-        # self.prog['Pan'].value = pos
-        self.ppp=pos
-        # pass
+    def clear_text_buffer(self):
+        self.vbo3.clear()
+
+    def clear_grid_buffer(self):
+        self.vbo4.clear()
 
     def clear(self, color=(0.0, .1, 0.1, 0)):
-        self.ctx.enable(moderngl.DEPTH_TEST)
+        # self.ctx.enable(moderngl.DEPTH_TEST)
         self.ctx.enable(moderngl.BLEND)
-
         self.ctx.clear(*color)
 
 
 class PanTool:
+    pan_position = Point(0,0)
+
     def __init__(self):
         self.total_x = 0.0
         self.total_y = 0.0
@@ -241,4 +206,8 @@ class PanTool:
 
     @property
     def value(self):
-        return (self.total_x - self.delta_x, self.total_y + self.delta_y)
+        x = self.total_x - self.delta_x
+        y = self.total_y + self.delta_y
+        
+        PanTool.pan_position = Point(x,y)
+        return x, y

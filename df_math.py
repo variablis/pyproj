@@ -43,3 +43,12 @@ def point_on_line(mouse_pt: Point, a_pt: Point, b_pt: Point, precision=0.035, en
     # Mouse point is not on the line segment
     return False, None
 
+
+# clamp value to min max range
+def clamp(n, min, max):
+    if n < min:
+        return min
+    elif n > max:
+        return max
+    else:
+        return n

@@ -32,9 +32,6 @@ void build_circle(vec4 position) {
 
 
 void main() {
-
     g_color = v_color[0];
-
     build_circle(gl_in[0].gl_Position);
-
 }
