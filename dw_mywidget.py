@@ -9,7 +9,7 @@ from dc_point import Point
 from dc_linedata import LineData, SceneData
 from dc_text import TextData
 from df_math import *
-from dc_linesegment import LineSegment, line_drag, line_stop_drag, check_drag_point, check_clicked_point, check_point
+from dc_linesegment import LineSegment
 
 
 # absolute path needed for pyinstaller
@@ -18,8 +18,7 @@ path_to_img = Path.cwd() / bundle_dir / "img"
 
 
 pan_tool = PanTool()
-lseg = LineSegment()
-
+segment = LineSegment()
 
 
 class MyWidget(ModernGLWidget):
@@ -33,12 +32,14 @@ class MyWidget(ModernGLWidget):
         self.zoomw = 0
         self.zfac = 1
 
-        self.uds=None
+        self.line_tool_active = False
+        self.clickcount = 0
 
-        self.createlineactive=False
-        self.clickcount=0
-        self.user_drag_start=None
-        self.startDragDistance=0.001
+        self.user_drag_start = None
+        self.start_drag_threshold = 0.001
+
+        self.mp = None # mouse point
+        self.mpp = None # mouse point + pan
 
 
     def init(self):
@@ -47,31 +48,29 @@ class MyWidget(ModernGLWidget):
 
 
     def render(self):
+        self.mp = self.mouse_pt()
+        self.mpp = self.mouse_pt_paned(self.mp)
+
         self.ctx.viewport = (0, 0, self.size().width(), self.size().height())
         self.screen.use()
         self.scene.clear()
 
-        self.scene.update_mvp(self.zfac)
-        self.scene.line_render(LineData.makeBuffer())
-        self.scene.text_render(TextData.makeBuffer())
+        self.scene.update_mvp(self.zfac, pan_tool.value)
+        self.scene.line_render(LineData.make_buffer())
+        self.scene.text_render(TextData.make_buffer())
 
 
     def mouse_pt(self):
         '''
         convert mouse position from pixels to normalized coordinates relative to the screen size
         '''
-        # origin is main window left upper corner 0,0
-        # mouse position ir read from whole display
+        # origin is main window left upper corner 0,0. mouse position ir read from whole display
         local_pos = self.mapFromGlobal(QCursor.pos())
- 
-        # convert mouse pixel coordinates to normalized coordinates with the origin at the center
-        # shif center to 0,0
+        # convert mouse pixel coordinates to normalized coordinates with the origin at the center, shift center to 0,0
         mouse_pos = Point(
             2*((local_pos.x() - self.size().width() /2) /512 /self.zfac),
             -2*((local_pos.y() - self.size().height() /2) /512 /self.zfac) # Negate y to match the coordinate system
             )
-
-        # print(mouse_pos.xy)
         return mouse_pos
     
 
@@ -79,19 +78,23 @@ class MyWidget(ModernGLWidget):
         '''
         add paned value to mouse position
         '''
-        x_paned = mouse_pt.x + pan_tool.value[0]
-        y_paned = mouse_pt.y + pan_tool.value[1]
+        x_paned = mouse_pt.x + pan_tool.value.x
+        y_paned = mouse_pt.y + pan_tool.value.y
         return Point(x_paned, y_paned)
     
 
-    def createlinetool(self, checked):
-        self.createlineactive = checked
-        self.clickcount=0
-        lseg.tool_active(checked)
+    def create_line_tool(self, checked):
+        '''
+        sets line creation tool status and resets click count
+        '''
+        self.line_tool_active = checked
+        self.clickcount = 0
 
 
-    # clear focus of QLineEdit
     def clear_input_focus(self):
+        '''
+        clear focus of QLineEdit
+        '''
         # mywidget -> qsplitter -> mainwindow
         self.parent().parent().input_gridsize.clearFocus()
         
@@ -101,75 +104,67 @@ class MyWidget(ModernGLWidget):
         self.zfac = pow(1.4, self.zoomw)
 
         SceneData.zoom_factor = self.zfac
-        TextData.rebuildAll(True)
+        TextData.rebuild_all(True)
 
         self.update()
-        # self.render()
         
 
     def mousePressEvent(self, event):
         self.clear_input_focus()
         
         if event.button() == Qt.MouseButton.MiddleButton:
-            pan_tool.start_drag(self.mouse_pt())
+            pan_tool.start_drag(self.mp)
         
         if event.button() == Qt.MouseButton.LeftButton:
 
-            mpn = self.mouse_pt_paned(self.mouse_pt())
+            if self.line_tool_active:
+                if not self.clickcount %2: #clicks in tool are even
+                    segment.start_line(self.mpp)
 
-            if self.createlineactive:
-                lseg.create_points(mpn, self.clickcount)
-                self.clickcount+=1
-                lseg.point_add(self.clickcount)
+                self.clickcount += 1
+
+                if not self.clickcount %2: #clicks in tool are even
+                    segment.end_line(self.mpp)
             else:
-                check_clicked_point(mpn)
+                segment.check_clicked_point(self.mpp)
+                segment.check_point(self.mpp)
 
-                # stulbs workarounds lai izslegtu selekcibju bez peles  kustinasanas
-                check_point(mpn)
                 # Store the initial mouse position for drag calculation
-
-                self.user_drag_start = self.mouse_pt()
-                self.uds = self.user_drag_start
+                self.user_drag_start = self.mp
        
         self.update()
 
 
     def mouseMoveEvent(self, event):
-        pan_tool.dragging(self.mouse_pt())
-
-        mpn = self.mouse_pt_paned(self.mouse_pt())
+        pan_tool.dragging(self.mp)
 
         if self.user_drag_start:
-            # Check for ongoing drag operation
-            drag_distance = points_to_distance(self.mouse_pt(), self.user_drag_start)
-            # print(drag_distance)
-            if drag_distance > self.startDragDistance:
-                # Drag has started
+            drag_distance = points_to_distance(self.mp, self.user_drag_start)
+            if drag_distance > self.start_drag_threshold:
+                # drag has started
                 # print("Drag Started")
-                # Reset the drag start position
-                check_drag_point( self.mouse_pt_paned(self.user_drag_start) )
- 
-                self.user_drag_start = None
-                self.uds = self.user_drag_start 
 
-        if self.createlineactive:
-            lseg.update_points(mpn, self.clickcount)
+                segment.check_drag_point( self.mouse_pt_paned(self.user_drag_start) )
+
+                # Reset the drag start position
+                self.user_drag_start = None
+
+        if self.line_tool_active:
+            if self.clickcount %2: # 3 %2 = 1 = True
+                segment.update_line(self.mpp)
+
         else:
-            check_point(mpn)
-            line_drag(mpn)
+            segment.check_point(self.mpp)
+            segment.line_drag(self.mpp)
 
         self.update()
-        self.render()
 
 
     def mouseReleaseEvent(self, event):
-        pan_tool.stop_drag(self.mouse_pt())
-
-        mpn = self.mouse_pt_paned(self.mouse_pt())
-        line_stop_drag(mpn)
-
         self.user_drag_start = None
-        self.uds = self.user_drag_start 
+        
+        pan_tool.stop_drag(self.mp)
+        segment.line_stop_drag(self.mpp)
 
         self.update()
 

@@ -96,11 +96,14 @@ class Renderer:
     def set_grid(self, unit):
         grid = self.make_grid(unit, 12)
         self.vbo4.clear()
-        # self.vbo4.orphan()
         self.vbo4.write(grid)
         
     
     def text_render(self, pts):
+        '''
+        writes text vertex data into vertex buffer object, 
+        calculates indices, renders new vertex array object
+        '''
         if pts.size:
             self.s1.use()
             data = pts.astype('f4').tobytes()
@@ -115,17 +118,19 @@ class Renderer:
 
 
     def line_render(self, pts):
-        # print(pts)
+        '''
+        writes lines vertex data into vertex buffer object, 
+        renders new vertex array object, 
+        same line data passed to render end circles in geometry shader
+        '''
         # render lines
         data = pts.astype('f4').tobytes()
-        # self.vbo.orphan()
         self.vbo.clear()
         self.vbo.write(data)
         self.vao.render(moderngl.LINES)
 
         # render circles
         if pts.size:
-            # self.vbo2.orphan()
             self.vbo2.clear()
             self.vbo2.write(data)
             self.vao2.render(moderngl.POINTS)
@@ -134,8 +139,10 @@ class Renderer:
         self.vao4.render(moderngl.LINES)
 
 
-    def update_mvp(self, zf):
-        pan = PanTool.pan_position
+    def update_mvp(self, zf, pan):
+        '''
+        calculate projection matrix, camera matrix, pass data to shaders as uniform
+        '''
 
         vw = self.ctx.viewport[2]
         vh = self.ctx.viewport[3]
@@ -181,7 +188,6 @@ class PanTool:
     '''
     pan calculation
     '''
-    pan_position = Point(0,0)
 
     def __init__(self):
         self.total_x = 0.0
@@ -215,6 +221,5 @@ class PanTool:
     def value(self):
         x = self.total_x + self.delta_x
         y = self.total_y + self.delta_y
-        
-        PanTool.pan_position = Point(x,y)
-        return x, y
+
+        return Point(x,y)

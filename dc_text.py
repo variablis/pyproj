@@ -135,16 +135,16 @@ class TextData:
 
             
     @classmethod
-    def deleteSelected(cls, ids):
+    def delete_selected(cls, ids):
         tmp = [elem for elem in cls.texts if elem.lineid not in ids]
         cls.texts = tmp
 
 
     @classmethod
-    def rebuildAll(cls, clear=False):
+    def rebuild_all(cls, clear=False):
         if clear:
             cls.texts = []
-        for line in LineData.getAllLines():
+        for line in LineData.get_all_lines():
             distance = line.distance *SceneData.units
             angle = line.angle
 
@@ -153,7 +153,7 @@ class TextData:
 
 
     @classmethod
-    def makeBuffer(cls):
+    def make_buffer(cls):
         tmp_list = []
         for elem in cls.texts:
             tmp_list.append( elem.vtx )
@@ -165,6 +165,6 @@ class TextData:
 
 
     @classmethod
-    def printBuffer(cls):
+    def print_buffer(cls):
         print(cls.texts)
 

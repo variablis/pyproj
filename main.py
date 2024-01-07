@@ -18,18 +18,16 @@ class MyMainWindow(QMainWindow):
 
         fmt = QSurfaceFormat()
         fmt.setVersion(3, 3)
-        fmt.setSamples(4)  # multi-sampling
+        fmt.setSamples(4) # multi-sampling
         
         self.mywidget = MyWidget()
         self.mywidget.setMouseTracking(True)
         self.mywidget.setFormat(fmt)
         self.mywidget.setGeometry(0, 0, 300, 300)
 
-
         self.setGeometry(100, 100, 512, 512)
         self.setMouseTracking(True)
 
-        # Create the layout for the central widget
         self.tree = MyTreeWidget()
 
         splitter = QSplitter()
@@ -41,42 +39,40 @@ class MyMainWindow(QMainWindow):
         self.tree.setMinimumWidth(100)
         self.tree.setMaximumWidth(180)
 
-        root_group = Group.addRoot('Root')
+        root_group = Group.add_root('Root')
         LineData.root = root_group
         LineData.treewidget = self.tree
-        self.tree.build_hierarchy(Group.getRoot())
+        self.tree.build_hierarchy(Group.get_root())
         self.tree.itemSelectionChanged.connect(self.mywidget.update)
-
 
         toolbar = QToolBar()
         toolbar2 = QToolBar()
 
         tbtn_new_file = QAction(QIcon(str(path_to_img/"paper.png")), "New", self)
-        tbtn_new_file.triggered.connect(self.newFile)
+        tbtn_new_file.triggered.connect(self.new_file)
         toolbar.addAction(tbtn_new_file)
 
         tbtn_open_file = QAction(QIcon(str(path_to_img/"folder.png")), "Open", self)
-        tbtn_open_file.triggered.connect(self.openFile)
+        tbtn_open_file.triggered.connect(self.open_file)
         toolbar.addAction(tbtn_open_file)
 
         tbtn_save_file = QAction(QIcon(str(path_to_img/"diskete.png")), "Save", self)
-        tbtn_save_file.triggered.connect(self.saveFile)
+        tbtn_save_file.triggered.connect(self.save_file)
         toolbar.addAction(tbtn_save_file)
 
         create_line = QAction(QIcon(str(path_to_img/"line.png")), "Create line", self)
         create_line.setCheckable(True)
-        create_line.toggled.connect(self.mywidget.createlinetool)
+        create_line.toggled.connect(self.mywidget.create_line_tool)
         toolbar2.addAction(create_line)
 
-
+        # TODO
         # toggle_dimensions = QAction("Toggle dimensions", self)
         # toggle_dimensions.setCheckable(True)
         # toggle_dimensions.triggered.connect()
         # toolbar2.addAction(toggle_dimensions)
 
-        # Create a QIntValidator to allow only integer input
+        # allow only integer input 1-25
         rgx = QRegularExpression("[1-9]|1[0-9]|2[0-5]")
- 
 
         label_grid = QLabel("Grid: ", self)
         self.input_gridsize = QLineEdit(self)
@@ -84,73 +80,67 @@ class MyMainWindow(QMainWindow):
         self.rx = QRegularExpressionValidator(rgx, self)
         self.input_gridsize.setValidator(self.rx)
         self.input_gridsize.setText("1")
-        self.input_gridsize.textChanged[str].connect(self.onGridChanged)
+        self.input_gridsize.textChanged[str].connect(self.grid_changed)
 
         toolbar2.addWidget(label_grid)
         toolbar2.addWidget(self.input_gridsize)
-
 
         label_units = QLabel("Scene units: ", self)
         self.input_units = QComboBox(self)
         self.input_units.addItems(["1", "10", "100", "1000"])
         self.input_units.setCurrentIndex(1)
-        self.input_units.currentIndexChanged.connect(self.onUnitChaged)
-
+        self.input_units.currentIndexChanged.connect(self.unit_changed)
 
         toolbar2.addWidget(label_units)
         toolbar2.addWidget(self.input_units)
-
 
         self.addToolBar(toolbar)
         self.addToolBar(toolbar2)
         
 
-    def onGridChanged(self, text):
+    def grid_changed(self, text):
         if text:
             self.mywidget.scene.set_grid(int(text))
             self.mywidget.update()
 
 
-    def onUnitChaged(self):
+    def unit_changed(self):
         selected_value = int(self.input_units.currentText())
         SceneData.units = selected_value
-        TextData.rebuildAll(clear=True)
-        # self.mywidget.scene.bufcl()
+        TextData.rebuild_all(True)
         self.mywidget.update()
 
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_Delete:
-            # print("Delete key pressed!")
+            ids = LineData.get_selected_ids()
+            TextData.delete_selected(ids)
+            LineData.delete_selected()
 
-            selids=LineData.getSelectedIds()
-            TextData.deleteSelected(selids)
-            LineData.deleteSelected()
-            
             self.mywidget.scene.clear_buffers()
             self.mywidget.update()
-            # self.mywidget.render()
+
         else:
             super().keyPressEvent(event)
 
 
-    def resetAll(self):
+    def reset_all(self):
         LineData.g_index=0
         LineData.lines=[]
         TextData.texts=[]
-        # self.mywidget.scene.clear_buffers()
+
+        self.mywidget.scene.clear_buffers()
         self.mywidget.update()
 
         LineData.root.remove_root_children()
-        LineData.treewidget.build_hierarchy(Group.getRoot())
+        LineData.treewidget.build_hierarchy(Group.get_root())
 
 
-    def newFile(self):
-        self.resetAll()
-        # print('new file...')
+    def new_file(self):
+        self.reset_all()
 
 
-    def openFile(self):
+    def open_file(self):
         home_dir = str(Path.cwd())
         fname = QFileDialog.getOpenFileName(self, 'Open file', home_dir)
 
@@ -159,23 +149,22 @@ class MyMainWindow(QMainWindow):
             # data = f.read()
             data = json.load(f)
 
-            self.resetAll()
-            r=Group.createGroupFromJson(data)
+            self.reset_all()
+            r=Group.create_group_from_json(data)
             LineData.root=r
             # LineData.printData()
-            TextData.rebuildAll()
+            TextData.rebuild_all()
             LineData.treewidget.build_hierarchy(r)
 
 
-    def saveFile(self):
+    def save_file(self):
         home_dir = str(Path.cwd())
         fname = QFileDialog.getSaveFileName(self, 'Save file', home_dir, '*.drw')
         # print(Group.hierarchyToJson())
         
         if fname[0]:
             f = open(fname[0], 'w')
-            json.dump(Group.hierarchyToJson(), f, indent=2)
-            # print('saved file...')
+            json.dump(Group.hierarchy_to_json(), f, indent=2)
 
 
 

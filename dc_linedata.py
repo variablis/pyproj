@@ -48,18 +48,18 @@ class Group:
         cls.rootobj.children=[]
 
     @classmethod
-    def addRoot(cls, name):
+    def add_root(cls, name):
         # Create the root group
         if cls.rootobj is None:
             cls.rootobj = cls(name)
         return cls.rootobj
 
     @classmethod
-    def getRoot(cls):
+    def get_root(cls):
         return cls.rootobj
     
     @classmethod
-    def printAll(cls):
+    def print_all(cls):
         return cls.rootobj.print_hierarchy()
 
     def print_hierarchy(self, indent=0):
@@ -72,20 +72,20 @@ class Group:
 
 
     @classmethod
-    def hierarchyToJson(cls, parent=None):
+    def hierarchy_to_json(cls, parent=None):
 
         result = {"name": cls.rootobj.name, "children": []}
         for child in cls.rootobj.children:
             if isinstance(child, Group):
-                result["children"].append(child.hierarchyToJson())
+                result["children"].append(child.hierarchy_to_json())
                 print('xxx')
             else:
-                result["children"].append({"name": child.name, "data": child.dataToJson()})
+                result["children"].append({"name": child.name, "data": child.data_to_json()})
         return result
 
 
     @classmethod
-    def createGroupFromJson(cls, json_data, parent=None):
+    def create_group_from_json(cls, json_data, parent=None):
         group_name = json_data["name"]
         new_group = cls(group_name)
 
@@ -101,13 +101,13 @@ class Group:
                 # new_child = Object(ch_name)  # You may need to replace Object with the appropriate class
                 # new_group.add_child(new_child)
 
-                LineData.jsonToData(ch_data["points"], ch_data["id"], ch_data["distance"],ch_data["angle"], ch_data["color"], ch_name)
+                LineData.json_to_data(ch_data["points"], ch_data["id"], ch_data["distance"],ch_data["angle"], ch_data["color"], ch_name)
                 # ld = LineData(line_id=ch_data["id"], name=ch_name)
-                new_group.add_child(LineData.getOneData(ch_data["id"]))
+                new_group.add_child(LineData.get_one_data(ch_data["id"]))
                 
             else:
                 # Recursively create a group
-                cls.createGroupFromJson(elem, parent=new_group)
+                cls.create_group_from_json(elem, parent=new_group)
 
         return new_group
 
@@ -135,7 +135,7 @@ class LineData(Object):
 
         self.line_id = line_id
         self.color = color
-        self.points = points # masivs ar punktiem
+        self.points = points
         self.distance = distance
         self.angle = angle
         self.name = name
@@ -145,6 +145,8 @@ class LineData(Object):
         # self.constraints = constraints TODO
 
         self.selected = False
+        self.hovered = False
+
         self.drag = False
         self.mousepos = None
         self.prev_mousepos = None 
@@ -176,21 +178,21 @@ class LineData(Object):
         self.prev_mousepos = self.mousepos
     
     @classmethod
-    def startline(cls, startpoint):
+    def add_startpoint(cls, startpoint):
         cls.lines.append(cls( line_id=cls.g_index, points=[startpoint, startpoint] ))
         cls.g_index += 1
         # print(cls.lines)
 
     @classmethod
-    def livepoint(cls, livepoint):
+    def live_point(cls, live_pt):
         if cls.lines:
             lastline = cls.lines[-1]
-            lastline.points[1] = livepoint
+            lastline.points[1] = live_pt
             lastline.distance = points_to_distance(lastline.points[0], lastline.points[1])
             lastline.angle = points_to_angle(lastline.points[0], lastline.points[1])
 
     @classmethod
-    def add(cls, endpoint, color=[1,1,1,1]):
+    def add_endpoint(cls, endpoint, color=[1,1,1,1]):
 
         if cls.lines:
             lastline = cls.lines[-1]
@@ -204,34 +206,34 @@ class LineData(Object):
             cls.treewidget.build_hierarchy(cls.root)
   
     @classmethod
-    def deselectAll(cls):
+    def deselect_all(cls):
         for elem in cls.lines:
             elem.color=[1,1,1,1]
             elem.selected=False
     
     @classmethod
-    def getAllLines(cls):
+    def get_all_lines(cls):
         return cls.lines
     
     @classmethod
-    def getLastElem(cls):
+    def get_last_elem(cls):
         if cls.lines:
             return cls.lines[-1]
     
     @classmethod
-    def getOneData(cls, id):
+    def get_one_data(cls, id):
         for elem in cls.lines:
             if elem.line_id==id:
                 return elem
         return None
 
     @classmethod
-    def getSelectedIds(cls):
+    def get_selected_ids(cls):
         tmp = [elem.line_id for elem in cls.lines if elem.selected]
         return tmp
 
     @classmethod
-    def deleteSelected(cls):
+    def delete_selected(cls):
         tmp2 = [elem for elem in cls.lines if elem.selected]
         for elem in tmp2:
             cls.root.delete_child(elem)
@@ -242,7 +244,7 @@ class LineData(Object):
         # print(cls.lines)
     
     @classmethod
-    def makeBuffer(cls):
+    def make_buffer(cls):
         tmp_list = []
         for elem in cls.lines:
             tmp_list.append([ 
@@ -253,12 +255,12 @@ class LineData(Object):
         return np.array(tmp_list)
 
     @classmethod
-    def printData(cls):
+    def print_data(cls):
         print(len(cls.lines))
         for elem in cls.lines:
             print(f"Line ID: {elem.line_id}, Point1: {elem.points[0].xy}, Point2: {elem.points[1].xy}, color: {elem.color}")
 
-    def dataToJson(self):
+    def data_to_json(self):
         return {
                 'id': self.line_id,
                 'distance': self.distance,
@@ -268,7 +270,7 @@ class LineData(Object):
             }
     
     @classmethod
-    def jsonToData(cls, points, line_id, distance, angle, color, name):
+    def json_to_data(cls, points, line_id, distance, angle, color, name):
         cls.lines.append(
             cls(
                 line_id = line_id,
