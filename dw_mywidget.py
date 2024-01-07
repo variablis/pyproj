@@ -9,7 +9,7 @@ from dc_point import Point
 from dc_linedata import LineData, SceneData
 from dc_text import TextData
 from df_math import *
-from dc_linesegment import LineSegment, linedrag, linestopdrag, check_dr_point, checkclickedpoint, checkpoint
+from dc_linesegment import LineSegment, line_drag, line_stop_drag, check_drag_point, check_clicked_point, check_point
 
 
 # absolute path needed for pyinstaller
@@ -21,24 +21,17 @@ pan_tool = PanTool()
 lseg = LineSegment()
 
 
-# convert mouse screen pixel coordinates to normalized coordinates -1.0 to 1.0
-def normalized_coordinates(mouse_pt, window_size, zoom_factor):
-    screen_width = window_size[0] / 512 / zoom_factor
-    screen_height = window_size[1] / 512 / zoom_factor
-    normalized_x = mouse_pt.x * 2 - 1 * screen_width + pan_tool.value[0]
-    normalized_y = -mouse_pt.y * 2 + 1 * screen_height + pan_tool.value[1]
 
-    return normalized_x, normalized_y
-
-
-# main opengl widget
 class MyWidget(ModernGLWidget):
+    '''
+    main opengl widget
+    '''
     def __init__(self):
         super(MyWidget, self).__init__()
 
         self.scene = None
-        self.zoomy = 0
-        self.zfakt = 1
+        self.zoomw = 0
+        self.zfac = 1
 
         self.uds=None
 
@@ -49,7 +42,6 @@ class MyWidget(ModernGLWidget):
 
 
     def init(self):
-        # self.resize(512, 512) shis ir qt mainwindow resizers
         self.ctx.viewport = (0, 0, 512, 512)
         self.scene = Renderer(self.ctx)
 
@@ -59,19 +51,39 @@ class MyWidget(ModernGLWidget):
         self.screen.use()
         self.scene.clear()
 
-        self.scene.update_mvp(self.zfakt)
+        self.scene.update_mvp(self.zfac)
         self.scene.line_render(LineData.makeBuffer())
         self.scene.text_render(TextData.makeBuffer())
 
 
-    def mycoord(self):
-        # origin ir main windowa kreisais augsejais sturis 0,0
-        # pozicija tiek nolasita pa visu ekranu!!
+    def mouse_pt(self):
+        '''
+        convert mouse position from pixels to normalized coordinates relative to the screen size
+        '''
+        # origin is main window left upper corner 0,0
+        # mouse position ir read from whole display
         local_pos = self.mapFromGlobal(QCursor.pos())
  
-        mousepos = Point(local_pos.x()/ 512/self.zfakt, local_pos.y()/ 512/self.zfakt)
-        return mousepos
+        # convert mouse pixel coordinates to normalized coordinates with the origin at the center
+        # shif center to 0,0
+        mouse_pos = Point(
+            2*((local_pos.x() - self.size().width() /2) /512 /self.zfac),
+            -2*((local_pos.y() - self.size().height() /2) /512 /self.zfac) # Negate y to match the coordinate system
+            )
+
+        # print(mouse_pos.xy)
+        return mouse_pos
     
+
+    def mouse_pt_paned(self, mouse_pt):
+        '''
+        add paned value to mouse position
+        '''
+        x_paned = mouse_pt.x + pan_tool.value[0]
+        y_paned = mouse_pt.y + pan_tool.value[1]
+        return Point(x_paned, y_paned)
+    
+
     def createlinetool(self, checked):
         self.createlineactive = checked
         self.clickcount=0
@@ -85,10 +97,10 @@ class MyWidget(ModernGLWidget):
         
         
     def wheelEvent(self, event):
-        self.zoomy +=event.angleDelta().y()/120
-        self.zfakt=pow(1.4, self.zoomy)
+        self.zoomw += event.angleDelta().y()/120
+        self.zfac = pow(1.4, self.zoomw)
 
-        SceneData.zoom_factor=self.zfakt
+        SceneData.zoom_factor = self.zfac
         TextData.rebuildAll(True)
 
         self.update()
@@ -99,61 +111,62 @@ class MyWidget(ModernGLWidget):
         self.clear_input_focus()
         
         if event.button() == Qt.MouseButton.MiddleButton:
-            pan_tool.start_drag(self.mycoord())
+            pan_tool.start_drag(self.mouse_pt())
         
         if event.button() == Qt.MouseButton.LeftButton:
 
+            mpn = self.mouse_pt_paned(self.mouse_pt())
+
             if self.createlineactive:
-                lseg.create_points( *normalized_coordinates(self.mycoord(), (self.size().width(), self.size().height()), self.zfakt), self.clickcount)
+                lseg.create_points(mpn, self.clickcount)
                 self.clickcount+=1
                 lseg.point_add(self.clickcount)
             else:
-                checkclickedpoint( *normalized_coordinates(self.mycoord(), (self.size().width(), self.size().height()), self.zfakt) )
+                check_clicked_point(mpn)
 
                 # stulbs workarounds lai izslegtu selekcibju bez peles  kustinasanas
-                checkpoint( *normalized_coordinates(self.mycoord(), (self.size().width(), self.size().height()), self.zfakt) )
+                check_point(mpn)
                 # Store the initial mouse position for drag calculation
 
-                self.user_drag_start = self.mycoord()
+                self.user_drag_start = self.mouse_pt()
                 self.uds = self.user_drag_start
        
         self.update()
 
 
     def mouseMoveEvent(self, event):
-        pan_tool.dragging(self.mycoord())
+        pan_tool.dragging(self.mouse_pt())
+
+        mpn = self.mouse_pt_paned(self.mouse_pt())
 
         if self.user_drag_start:
             # Check for ongoing drag operation
-            drag_distance = points_to_distance(self.mycoord(), self.user_drag_start)
+            drag_distance = points_to_distance(self.mouse_pt(), self.user_drag_start)
             # print(drag_distance)
             if drag_distance > self.startDragDistance:
                 # Drag has started
-                print("Drag Started")
+                # print("Drag Started")
                 # Reset the drag start position
-                check_dr_point( *normalized_coordinates(self.user_drag_start, (self.size().width(), self.size().height()), self.zfakt) )
+                check_drag_point( self.mouse_pt_paned(self.user_drag_start) )
  
                 self.user_drag_start = None
                 self.uds = self.user_drag_start 
 
         if self.createlineactive:
-            
-
-            # lseg.update_points(self.mycoord(), self.clickcount, self.size(), pan_tool.value, self.zfakt)
-            lseg.update_points(*normalized_coordinates(self.mycoord(), (self.size().width(), self.size().height()), self.zfakt), self.clickcount)
+            lseg.update_points(mpn, self.clickcount)
         else:
-            checkpoint( *normalized_coordinates(self.mycoord(), (self.size().width(), self.size().height()), self.zfakt) )
-            linedrag( *normalized_coordinates(self.mycoord(), (self.size().width(), self.size().height()), self.zfakt) )
-            
+            check_point(mpn)
+            line_drag(mpn)
 
         self.update()
         self.render()
 
 
     def mouseReleaseEvent(self, event):
-        pan_tool.stop_drag(self.mycoord())
+        pan_tool.stop_drag(self.mouse_pt())
 
-        linestopdrag( *normalized_coordinates(self.mycoord(), (self.size().width(), self.size().height()), self.zfakt) )
+        mpn = self.mouse_pt_paned(self.mouse_pt())
+        line_stop_drag(mpn)
 
         self.user_drag_start = None
         self.uds = self.user_drag_start 

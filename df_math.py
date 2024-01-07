@@ -1,20 +1,28 @@
 import math
 from dc_point import Point
 
-# Calculate the Euclidean distance between the two points
+
 def points_to_distance(p1: Point, p2: Point):
+    '''
+    calculate the Euclidean distance between the two points
+    '''
     return math.dist(p2.xy, p1.xy)
 
 
 def points_to_angle(p1: Point, p2: Point):
+    '''
+    calculate angle in degrees between the two points
+    '''
     vector = p2-p1
     rad = math.atan2(vector.y, vector.x)
     return math.degrees(rad)%360
 
 
-# Check if the mouse point is on the line segment defined by a_pt and b_pt
 def point_on_line(mouse_pt: Point, a_pt: Point, b_pt: Point, precision=0.035, endpoint_threshold=0.05):
-    
+    '''
+    check if the mouse point is on the line segment defined by a_pt and b_pt
+    '''
+        
     # Check if the mouse point is close to one of the endpoints
     dist_to_a = math.dist(a_pt.xy, mouse_pt.xy)
     dist_to_b = math.dist(b_pt.xy, mouse_pt.xy)
@@ -44,8 +52,12 @@ def point_on_line(mouse_pt: Point, a_pt: Point, b_pt: Point, precision=0.035, en
     return False, None
 
 
-# clamp value to min max range
+
 def clamp(n, min, max):
+    '''
+    clamp value to min max range
+    '''
+
     if n < min:
         return min
     elif n > max:

@@ -13,8 +13,11 @@ bundle_dir = Path(__file__).parent
 path_to_data = Path.cwd() / bundle_dir / "msdf"
 
 
-# class for msdf generated text conversion to quad vertices
+
 class TextData:
+    '''
+    class for text data storage
+    '''
     
     # open generated msdf font json file
     f = open(path_to_data / "fonts.json")
@@ -30,8 +33,10 @@ class TextData:
         self.vtx = self.text_to_vertices()
 
 
-    # return array of quad vertices for each char
     def text_to_vertices(self):
+        '''
+        return array of quad vertices for each char
+        '''
         zf = SceneData.zoom_factor
         image = (256, 256)
         arr=[]
@@ -139,7 +144,7 @@ class TextData:
     def rebuildAll(cls, clear=False):
         if clear:
             cls.texts = []
-        for line in LineData.getData():
+        for line in LineData.getAllLines():
             distance = line.distance *SceneData.units
             angle = line.angle
 

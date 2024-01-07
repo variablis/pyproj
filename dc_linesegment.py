@@ -1,11 +1,13 @@
 from dc_linedata import LineData, SceneData
 from dc_text import TextData
-from dc_point import Point
+# from dc_point import Point
 from df_math import *
 
 
-# line segment class definition
 class LineSegment:
+    '''
+    line segment class definition
+    '''
     def __init__(self):
 
         self.startpoint=None
@@ -16,13 +18,14 @@ class LineSegment:
     def tool_active(self, checked):
         self.toolstate = checked
         if not checked:
-            print('exit tool')
+            # print('exit tool')
+            pass
 
 
     def point_add(self, clicks):
         if self.toolstate:
             if not clicks %2:
-                print('segment done')
+                # print('segment done')
                 # janofikse beigu punkts tikai
                 LineData.add(self.endpoint)
             else:
@@ -30,9 +33,9 @@ class LineSegment:
                 pass
 
 
-    def update_points(self, cx, cy, clicks):
+    def update_points(self, mouse_pt, clicks):
         if clicks %2:
-            LineData.livepoint(Point(cx, cy))
+            LineData.livepoint(mouse_pt)
 
             distance = LineData.getLastElem().distance *SceneData.units
             angle = LineData.getLastElem().angle
@@ -41,11 +44,11 @@ class LineSegment:
             TextData.update(text, LineData.getLastElem().points, LineData.getLastElem().line_id)
 
 
-    def create_points(self, cx, cy, clicks):
+    def create_points(self, mouse_pt, clicks):
         if not clicks %2:
-            self.startpoint = Point(cx,cy)
+            self.startpoint = mouse_pt
 
-        self.endpoint = Point(cx,cy)
+        self.endpoint = mouse_pt
 
         if not clicks %2:
             # print('segment start--')
@@ -59,29 +62,34 @@ class LineSegment:
 
 
 
-
-def checkpoint(cx, cy):
-    for d in LineData.getData():
-        a_pt = d.points[0]
-        b_pt = d.points[1]
+def check_point(mouse_pt):
+    '''
+    checks all lines against mouse point to detect if mouse hovers any of them
+    '''
+    for line in LineData.getAllLines():
+        a_pt = line.points[0]
+        b_pt = line.points[1]
         
-        if not d.selected:
-            d.color = [1,1,1,1]
+        if not line.selected:
+            line.color = [1,1,1,1]
 
-        test = point_on_line(Point(cx,cy), a_pt, b_pt)
+        test = point_on_line(mouse_pt, a_pt, b_pt)
 
         if test[0]:
-            if not d.selected:
-                d.color = [1,0,1,1]
+            if not line.selected:
+                line.color = [1,0,1,1]
 
 
-def checkclickedpoint(cx, cy):
-    for d in LineData.getData():
+def check_clicked_point(mouse_pt):
+    '''
+    checks all lines against mouse point to detect if user has clicked on any of them
+    '''
+    for d in LineData.getAllLines():
         a_pt = d.points[0]
         b_pt = d.points[1]
         # d.color = [1,1,1,1]
 
-        test = point_on_line(Point(cx,cy), a_pt, b_pt)
+        test = point_on_line(mouse_pt, a_pt, b_pt)
         if test[0]:
             d.color = [0,1,.3,1]
             d.selected=True
@@ -89,37 +97,34 @@ def checkclickedpoint(cx, cy):
             d.selected=False
 
 
-def check_dr_point(cx, cy):
-    for d in LineData.getData():
+def check_drag_point(mouse_pt):
+    for d in LineData.getAllLines():
         a_pt = d.points[0]
         b_pt = d.points[1]
 
-        test = point_on_line(Point(cx,cy), a_pt, b_pt)
+        test = point_on_line(mouse_pt, a_pt, b_pt)
 
         if test[0]==True:
             d.drag=True
-            d.mousepos = d.prev_mousepos = Point(cx,cy)
+            d.mousepos = d.prev_mousepos = mouse_pt
 
             if test[1] == 0:
-                d.dragobj=0
+                d.dragtype=0
 
             elif test[1] == 1:
-                # print('vienns')
-                d.dragobj=1
+                d.dragtype=1
 
             elif test[1] == 2:
-                d.dragobj=2
+                d.dragtype=2
         else:
-            d.dragobj=-1
+            d.dragtype= None
 
 
-def linedrag(cx, cy):
-    for l in LineData.getData():
+def line_drag(mouse_pt):
+    for l in LineData.getAllLines():
         if l.drag:
-            l.mousepos = Point(cx,cy)
-            # d.linemove()
-            # print(d.dragobj)
-            l.pointmove(l.dragobj)
+            l.mousepos = mouse_pt
+            l.update_point_data(l.dragtype)
             # print(d.line_id)
 
             distance = l.distance *SceneData.units
@@ -130,12 +135,12 @@ def linedrag(cx, cy):
             TextData.update( text, l.points, l.line_id)
 
 
-def linestopdrag(cx, cy):
-    for l in LineData.getData():
+def line_stop_drag(mouse_pt):
+    for l in LineData.getAllLines():
         if l.drag:
             l.drag=False
-            l.mousepos =  Point(cx,cy)
-            print("drag end")
+            l.mousepos =  mouse_pt
+            # print("drag end")
 
 
 

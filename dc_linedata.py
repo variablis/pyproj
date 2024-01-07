@@ -1,17 +1,23 @@
 import numpy as np
 from df_math import *
+from dc_point import Point
 
 
-# global scene data class
 class SceneData():
+    '''
+    global scene data storage class
+    '''
     # filename = 'untitled'
     units = 10
     grid = 1
     zoom_factor = 1.0
     # saved = False
 
-# group class definition for hierarchical grouping
+
 class Group:
+    '''
+    group class definition for hierarchical grouping
+    '''
     rootobj = None
 
     def __init__(self, name):
@@ -106,104 +112,73 @@ class Group:
         return new_group
 
 
-# object class definition
 class Object:
+    '''
+    object class definition
+    '''
     def __init__(self, name):
         self.name = name
         self.parent = None
 
 
-# line data storage class
 class LineData(Object):
-    idx=0
+    '''
+    line data storage class
+    '''
+    g_index = 0
     lines = []
-    root=None
-    treewidget=None
+    root = None
+    treewidget = None
 
-    def __init__(self, line_id, points=[], distance=0.0, angle=0.0, visibility=1, layer=1, color=[1,1,1,1], constraints={}, name=''):
+    def __init__(self, line_id, points: list=[], distance=0.0, angle=0.0, color=[1,1,1,1], name=''):
         Object.__init__(self, name)
 
         self.line_id = line_id
-        self.visibility = visibility
-        self.layer = layer
         self.color = color
-        self.points = points #masivs ar punktiem
+        self.points = points # masivs ar punktiem
         self.distance = distance
         self.angle = angle
-        self.constraints = constraints
+        self.name = name
 
-        self.selected=False
-        self.drag=False
-        self.mousepos=None
-        self.prev_mousepos=None
+        # self.visibility = visibility TODO
+        # self.layer = layer TODO
+        # self.constraints = constraints TODO
+
+        self.selected = False
+        self.drag = False
+        self.mousepos = None
+        self.prev_mousepos = None 
+        self.dragtype = None
+
+
+    def update_point_data(self, pt_id):
+        self.distance = points_to_distance(self.points[0], self.points[1])
+        self.angle = points_to_angle(self.points[0], self.points[1])
         
-        self.dragobj=-1
+        # one of the line end points moving
+        if pt_id==0 or pt_id==1:
+            self.points[pt_id] = self.mousepos
 
-        self.name=name
-
-
-    def linemove(self):
-        actline = self.lines[self.line_id]
-
-        p1orig = actline.points[0]
-        p2orig = actline.points[1]
-
-        # kapec p1orig nav point klasee??
-        # print(p1orig)
-
-        # Calculate the change in mouse position
-        delta_x = self.mousepos.x - self.prev_mousepos.x
-        delta_y = self.mousepos.y - self.prev_mousepos.y
-
-        actline.points[0] = [p1orig[0]+delta_x, p1orig[1]+delta_y]
-        actline.points[1] = [p2orig[0]+delta_x, p2orig[1]+delta_y]
-
-        # Update the previous mouse position
-        self.prev_mousepos = self.mousepos
-
-    def pointmove(self, ptid):
-        # actline = self.lines[self.line_id]
-        actline=self
-
-        actline.distance = points_to_distance(actline.points[0], actline.points[1])
-        actline.angle = points_to_angle(actline.points[0], actline.points[1])
-
-        if ptid==0 or ptid==1:
-
-            porig = actline.points[ptid]
-
+        # both line points moving = whole line is moved
+        if pt_id==2:
             # Calculate the change in mouse position
             delta_x = self.mousepos.x - self.prev_mousepos.x
             delta_y = self.mousepos.y - self.prev_mousepos.y
-
-            # print([porig[ptid]])
-
-            # actline.point[ptid] = [ porig[0]+delta_x, porig[1]+delta_y] #tiek saglabats ofsets ko mes negroibam
-            actline.points[ptid] = self.mousepos
-
-        if ptid==2:
-            p1orig = actline.points[0]
-            p2orig = actline.points[1]
-
-            # kapec p1orig nav point klasae??
-            # print(p1orig)
-
-            # Calculate the change in mouse position
-            delta_x = self.mousepos.x - self.prev_mousepos.x
-            delta_y = self.mousepos.y - self.prev_mousepos.y
-
             delta = Point(delta_x, delta_y)
 
-            actline.points[0] = p1orig + delta
-            actline.points[1] = p2orig + delta
+            p1orig = self.points[0]
+            p2orig = self.points[1]
+
+            self.points[0] = p1orig + delta
+            self.points[1] = p2orig + delta
 
         # Update the previous mouse position
         self.prev_mousepos = self.mousepos
     
     @classmethod
     def startline(cls, startpoint):
-        cls.lines.append(cls( line_id=cls.idx, points=[startpoint, startpoint] ))
-        cls.idx +=1
+        cls.lines.append(cls( line_id=cls.g_index, points=[startpoint, startpoint] ))
+        cls.g_index += 1
         # print(cls.lines)
 
     @classmethod
@@ -235,7 +210,7 @@ class LineData(Object):
             elem.selected=False
     
     @classmethod
-    def getData(cls):
+    def getAllLines(cls):
         return cls.lines
     
     @classmethod

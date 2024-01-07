@@ -10,6 +10,9 @@ from dc_linedata import Group, SceneData
 
 
 class MyMainWindow(QMainWindow):
+    '''
+    main window
+    '''
     def __init__(self):
         super().__init__()
 
@@ -132,15 +135,14 @@ class MyMainWindow(QMainWindow):
 
 
     def resetAll(self):
-        LineData.idx=0
+        LineData.g_index=0
         LineData.lines=[]
         TextData.texts=[]
-        self.mywidget.scene.clear_buffers()
+        # self.mywidget.scene.clear_buffers()
+        self.mywidget.update()
 
         LineData.root.remove_root_children()
         LineData.treewidget.build_hierarchy(Group.getRoot())
-
-        self.update()
 
 
     def newFile(self):

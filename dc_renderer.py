@@ -14,8 +14,10 @@ path_to_sh = Path.cwd() / bundle_dir / "shaders"
 path_to_msdf = Path.cwd() / bundle_dir / "msdf"
 
 
-# renderer class
 class Renderer:
+    '''
+    renderer class
+    '''
     def __init__(self, ctx, reserve='4MB'):
         self.ctx = ctx
 
@@ -94,9 +96,8 @@ class Renderer:
     def set_grid(self, unit):
         grid = self.make_grid(unit, 12)
         self.vbo4.clear()
-        self.vbo4.orphan()
+        # self.vbo4.orphan()
         self.vbo4.write(grid)
-        self.vao4.render(moderngl.LINES)
         
     
     def text_render(self, pts):
@@ -114,15 +115,18 @@ class Renderer:
 
 
     def line_render(self, pts):
+        # print(pts)
         # render lines
         data = pts.astype('f4').tobytes()
-        self.vbo.orphan()
+        # self.vbo.orphan()
+        self.vbo.clear()
         self.vbo.write(data)
         self.vao.render(moderngl.LINES)
 
         # render circles
         if pts.size:
-            self.vbo2.orphan()
+            # self.vbo2.orphan()
+            self.vbo2.clear()
             self.vbo2.write(data)
             self.vao2.render(moderngl.POINTS)
 
@@ -174,6 +178,9 @@ class Renderer:
 
 
 class PanTool:
+    '''
+    pan calculation
+    '''
     pan_position = Point(0,0)
 
     def __init__(self):
@@ -192,13 +199,13 @@ class PanTool:
 
     def dragging(self, point):
         if self.drag:
-            self.delta_x = (point.x - self.start_x) * 2.0
-            self.delta_y = (point.y - self.start_y) * 2.0
+            self.delta_x = (self.start_x-point.x) #* 2.0
+            self.delta_y = (self.start_y-point.y) #* 2.0
 
     def stop_drag(self, point):
         if self.drag:
             self.dragging(point)
-            self.total_x -= self.delta_x
+            self.total_x += self.delta_x
             self.total_y += self.delta_y
             self.delta_x = 0.0
             self.delta_y = 0.0
@@ -206,7 +213,7 @@ class PanTool:
 
     @property
     def value(self):
-        x = self.total_x - self.delta_x
+        x = self.total_x + self.delta_x
         y = self.total_y + self.delta_y
         
         PanTool.pan_position = Point(x,y)
