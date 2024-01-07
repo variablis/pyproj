@@ -125,7 +125,7 @@ class MyMainWindow(QMainWindow):
 
 
     def reset_all(self):
-        LineData.g_index=0
+        LineData.g_index = 0
         LineData.lines=[]
         TextData.texts=[]
 
@@ -133,7 +133,7 @@ class MyMainWindow(QMainWindow):
         self.mywidget.update()
 
         LineData.root.remove_root_children()
-        LineData.treewidget.build_hierarchy(Group.get_root())
+        self.tree.build_hierarchy(Group.get_root())
 
 
     def new_file(self):
@@ -146,21 +146,24 @@ class MyMainWindow(QMainWindow):
 
         if fname[0]:
             f = open(fname[0], 'r')
-            # data = f.read()
             data = json.load(f)
 
             self.reset_all()
+
             r=Group.create_group_from_json(data)
             LineData.root=r
+
+            # print(LineData.root.children)
             # LineData.printData()
             TextData.rebuild_all()
-            LineData.treewidget.build_hierarchy(r)
+            self.tree.build_hierarchy(r)
 
 
     def save_file(self):
         home_dir = str(Path.cwd())
         fname = QFileDialog.getSaveFileName(self, 'Save file', home_dir, '*.drw')
-        # print(Group.hierarchyToJson())
+
+        print(Group.hierarchy_to_json())
         
         if fname[0]:
             f = open(fname[0], 'w')

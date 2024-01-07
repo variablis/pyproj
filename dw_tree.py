@@ -63,7 +63,7 @@ class MyTreeWidget(QTreeWidget):
         if item_at_pos:
             if ctrl_pressed is False:
                 self.selectionModel().clearSelection()
-                LineData.deselectAll()
+                LineData.deselect_all()
                 # self.itemSelectionChanged.emit()
                 # self.myf.update()
                 # item_at_pos.setSelected(True)
@@ -75,9 +75,9 @@ class MyTreeWidget(QTreeWidget):
             id=int(item_at_pos.data(1,0))
             if id>-1:
                 # LineData.deselectAll()
-                sl=LineData.getOneData(id)
-                sl.color=[1,1,0,1]
-                sl.selected=True
+                sl=LineData.get_one_data(id)
+                sl.color = [1,1,0,1]
+                sl.selected = True
                 self.itemSelectionChanged.emit()
 
             item_at_pos.setSelected(True)  
@@ -87,7 +87,7 @@ class MyTreeWidget(QTreeWidget):
         else:
             # print("blank")
             self.selectionModel().clearSelection()
-            LineData.deselectAll()
+            LineData.deselect_all()
 
             self.itemSelectionChanged.emit()
             # self.myf.update()
