@@ -103,8 +103,8 @@ class MyWidget(ModernGLWidget):
     def wheelEvent(self, event):
         self.zoom_wheel += event.angleDelta().y()/120
         self.zfact = pow(1.4, self.zoom_wheel)
-
-        self.start_drag_threshold /= self.zfact
+        self.start_drag_threshold = 0.001 / self.zfact
+        
         SceneData.zoom_factor = self.zfact
         TextData.rebuild_all(True)
 
