@@ -1,12 +1,11 @@
 import json
 import numpy as np
+import pyrr
 from pathlib import Path
 
 from dc_linedata import LineData, SceneData
 from dc_point import Point
 from df_math import points_to_angle
-
-import pyrr
 
 # absolute path needed for pyinstaller
 bundle_dir = Path(__file__).parent

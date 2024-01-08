@@ -15,7 +15,18 @@ def points_to_angle(p1: Point, p2: Point):
     '''
     vector = p2-p1
     rad = math.atan2(vector.y, vector.x)
-    return math.degrees(rad)%360
+    return math.degrees(rad) %360
+
+
+def points_to_angle_abs(p1: Point, p2: Point):
+    '''
+    calculate absolute angle in degrees between the two points
+    '''
+    vector = p2-p1
+    angle = math.degrees(math.atan2(vector.y, vector.x)) % 360
+    complementary_angle = (angle + 180) % 360
+
+    return min(angle, complementary_angle)
 
 
 def point_on_line(mouse_pt: Point, a_pt: Point, b_pt: Point, precision=0.035, endpoint_threshold=0.05):
@@ -50,7 +61,6 @@ def point_on_line(mouse_pt: Point, a_pt: Point, b_pt: Point, precision=0.035, en
     
     # Mouse point is not on the line segment
     return False, None
-
 
 
 def clamp(n, min, max):

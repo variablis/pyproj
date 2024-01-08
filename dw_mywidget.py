@@ -1,5 +1,5 @@
 from PyQt6.QtGui import QCursor
-from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtCore import Qt
 
 from pathlib import Path
 
@@ -8,7 +8,7 @@ from dc_renderer import Renderer, PanTool
 from dc_point import Point
 from dc_linedata import LineData, SceneData
 from dc_text import TextData
-from df_math import *
+from df_math import points_to_distance
 from dc_linesegment import LineSegment
 
 
@@ -93,10 +93,11 @@ class MyWidget(ModernGLWidget):
 
     def clear_input_focus(self):
         '''
-        clear focus of QLineEdit
+        clear focus of input fields
         '''
         # mywidget -> qsplitter -> mainwindow
         self.parent().parent().input_gridsize.clearFocus()
+        self.parent().parent().input_units.clearFocus()
         
         
     def wheelEvent(self, event):
@@ -151,7 +152,7 @@ class MyWidget(ModernGLWidget):
 
         if self.line_tool_active:
             if self.clickcount %2: # 3 %2 = 1 = True
-                segment.update_line(self.mpp)
+                segment.update_live_point(self.mpp)
 
         else:
             segment.check_point(self.mpp)

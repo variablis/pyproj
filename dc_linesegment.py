@@ -1,7 +1,7 @@
 from dc_linedata import LineData, SceneData
 from dc_text import TextData
 
-from df_math import *
+from df_math import point_on_line
 
 
 class LineSegment:
@@ -12,16 +12,22 @@ class LineSegment:
         pass
 
 
+    def set_line_text(self, line):
+        distance = line.distance *SceneData.units
+        angle = line.angle
+        text = f"{round(distance,4):.2f} {round(angle,2):.2f}°"
+        return text
+
+
     def start_line(self, mouse_pt):
         '''
         start new line, starting new line segment
         '''
         LineData.add_startpoint(mouse_pt)
 
-        distance = LineData.get_last_elem().distance *SceneData.units
-        angle = LineData.get_last_elem().angle
-        text = f'{round(distance,4):.2f} {round(angle,2):.2f}°'
-        TextData.add(text, LineData.get_last_elem().points, LineData.get_last_elem().line_id)
+        line = LineData.get_last_elem()
+        text = self.set_line_text(line)
+        TextData.add(text, line.points, line.line_id)
 
 
     def end_line(self, mouse_pt):
@@ -32,17 +38,16 @@ class LineSegment:
         # print('segment done')
 
 
-    def update_line(self, mouse_pt):
+    def update_live_point(self, mouse_pt):
         '''
-        update line data
+        update live endpoint line creation tool is active 
         '''
-        LineData.live_point(mouse_pt)
+        line = LineData.get_last_elem()
+        line.mousepos = mouse_pt
+        line.update_point_data(1)
 
-        distance = LineData.get_last_elem().distance *SceneData.units
-        angle = LineData.get_last_elem().angle
-
-        text = f'{round(distance,4):.2f} {round(angle,2):.2f}°'
-        TextData.update(text, LineData.get_last_elem().points, LineData.get_last_elem().line_id)
+        text = self.set_line_text(line)
+        TextData.update(text, line.points, line.line_id)
 
 
     def check_point(self, mouse_pt):
@@ -117,10 +122,8 @@ class LineSegment:
                 line.mousepos = mouse_pt
                 line.update_point_data(line.dragtype)
 
-                distance = line.distance *SceneData.units
-                angle = line.angle
-                text = f"{round(distance,4):.2f} {round(angle,2):.2f}°"
-                TextData.update( text, line.points, line.line_id)
+                text = self.set_line_text(line)
+                TextData.update(text, line.points, line.line_id)
 
 
     def line_stop_drag(self, mouse_pt):

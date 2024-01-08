@@ -1,12 +1,19 @@
 from PyQt6.QtWidgets import QApplication, QMainWindow, QToolBar, QFileDialog, QSplitter, QLineEdit, QLabel, QComboBox
 from PyQt6.QtGui import QSurfaceFormat, QRegularExpressionValidator, QIcon, QAction
-from PyQt6.QtCore import QRegularExpression
+from PyQt6.QtCore import Qt, QRegularExpression
 
 import json
+from pathlib import Path
 
-from dw_mywidget import *
+from dw_mywidget import MyWidget
 from dw_tree import MyTreeWidget
-from dc_linedata import Group, SceneData
+from dc_linedata import LineData, Group, SceneData
+from dc_text import TextData
+
+
+# absolute path needed for pyinstaller
+bundle_dir = Path(__file__).parent
+path_to_img = Path.cwd() / bundle_dir / "img"
 
 
 class MyMainWindow(QMainWindow):
@@ -39,10 +46,10 @@ class MyMainWindow(QMainWindow):
         self.tree.setMinimumWidth(100)
         self.tree.setMaximumWidth(180)
 
-        root_group = Group.add_root('Root')
-        LineData.root = root_group
+        self.root_group = Group('Root')
+        LineData.root = self.root_group
         LineData.treewidget = self.tree
-        self.tree.build_hierarchy(Group.get_root())
+        self.tree.build_hierarchy(self.root_group)
         self.tree.itemSelectionChanged.connect(self.mywidget.update)
 
         toolbar = QToolBar()
@@ -65,7 +72,7 @@ class MyMainWindow(QMainWindow):
         create_line.toggled.connect(self.mywidget.create_line_tool)
         toolbar2.addAction(create_line)
 
-        # TODO
+        # TODO:
         # toggle_dimensions = QAction("Toggle dimensions", self)
         # toggle_dimensions.setCheckable(True)
         # toggle_dimensions.triggered.connect()
@@ -132,20 +139,13 @@ class MyMainWindow(QMainWindow):
         self.mywidget.scene.clear_buffers()
         self.mywidget.update()
 
-        # LineData.root.remove_root_children()
-        # Group.print_hierarchy(Group.get_root())
-        Group.remove_root_children()
-        
-        
-        self.tree.build_hierarchy(Group.get_root())
-
 
     def new_file(self):
         self.reset_all()
-        x=Group.add_root('Root')
-        LineData.root = x
 
-        self.tree.build_hierarchy(Group.get_root())
+        self.root_group = Group('Root')
+        LineData.root = self.root_group
+        self.tree.build_hierarchy(self.root_group)
 
 
     def open_file(self):
@@ -158,24 +158,22 @@ class MyMainWindow(QMainWindow):
 
             self.reset_all()
 
-            r=Group.create_group_from_json(data)
-            LineData.root=r
+            self.root_group = Group.json_to_hierarchy(data)
+            LineData.root = self.root_group
+            self.tree.build_hierarchy(self.root_group)
 
-            # print(LineData.root.children)
-            # LineData.printData()
             TextData.rebuild_all()
-            self.tree.build_hierarchy(r)
-
+            
 
     def save_file(self):
         home_dir = str(Path.cwd())
         fname = QFileDialog.getSaveFileName(self, 'Save file', home_dir, '*.drw')
 
-        print(Group.hierarchy_to_json())
+        # print(self.root_group.hierarchy_to_json())
         
         if fname[0]:
             f = open(fname[0], 'w')
-            json.dump(Group.hierarchy_to_json(), f, indent=2)
+            json.dump(self.root_group.hierarchy_to_json(), f, indent=2)
 
 
 

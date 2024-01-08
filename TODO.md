@@ -1,6 +1,7 @@
 # Python vector drawing app
 
 ### Tasks
+- [ ] Line pick tolerance based on zoom
 - [ ] Toggle dimensions visibility
 - [ ] Constraints
  - [ ] Lock position
