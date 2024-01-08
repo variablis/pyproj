@@ -58,7 +58,7 @@ class LineSegment:
             a_pt = line.points[0]
             b_pt = line.points[1]
 
-            test, _ = point_on_line(mouse_pt, a_pt, b_pt)
+            test, _ = point_on_line(mouse_pt, a_pt, b_pt, 0.035 /SceneData.zoom_factor, 0.05 /SceneData.zoom_factor)
 
             if test == True:
                 line.hovered = True
@@ -86,7 +86,7 @@ class LineSegment:
             a_pt = line.points[0]
             b_pt = line.points[1]
 
-            test, _ = point_on_line(mouse_pt, a_pt, b_pt)
+            test, _ = point_on_line(mouse_pt, a_pt, b_pt, 0.035 /SceneData.zoom_factor, 0.05 /SceneData.zoom_factor)
             
             if test == True:
                 line.selected = True
@@ -103,7 +103,7 @@ class LineSegment:
             a_pt = line.points[0]
             b_pt = line.points[1]
 
-            test, dragtype = point_on_line(mouse_pt, a_pt, b_pt)
+            test, dragtype = point_on_line(mouse_pt, a_pt, b_pt, 0.035 /SceneData.zoom_factor, 0.05 /SceneData.zoom_factor)
 
             if test == True:
                 line.drag = True

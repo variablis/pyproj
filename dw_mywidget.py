@@ -29,8 +29,8 @@ class MyWidget(ModernGLWidget):
         super(MyWidget, self).__init__()
 
         self.scene = None
-        self.zoomw = 0
-        self.zfac = 1
+        self.zoom_wheel = 0
+        self.zfact = 1
 
         self.line_tool_active = False
         self.clickcount = 0
@@ -55,7 +55,7 @@ class MyWidget(ModernGLWidget):
         self.screen.use()
         self.scene.clear()
 
-        self.scene.update_mvp(self.zfac, pan_tool.value)
+        self.scene.update_mvp(self.zfact, pan_tool.value)
         self.scene.line_render(LineData.make_buffer())
         self.scene.text_render(TextData.make_buffer())
 
@@ -68,8 +68,8 @@ class MyWidget(ModernGLWidget):
         local_pos = self.mapFromGlobal(QCursor.pos())
         # convert mouse pixel coordinates to normalized coordinates with the origin at the center, shift center to 0,0
         mouse_pos = Point(
-            2*((local_pos.x() - self.size().width() /2) /512 /self.zfac),
-            -2*((local_pos.y() - self.size().height() /2) /512 /self.zfac) # Negate y to match the coordinate system
+            2*((local_pos.x() - self.size().width() /2) /512 /self.zfact),
+            -2*((local_pos.y() - self.size().height() /2) /512 /self.zfact) # Negate y to match the coordinate system
             )
         return mouse_pos
     
@@ -101,10 +101,11 @@ class MyWidget(ModernGLWidget):
         
         
     def wheelEvent(self, event):
-        self.zoomw += event.angleDelta().y()/120
-        self.zfac = pow(1.4, self.zoomw)
+        self.zoom_wheel += event.angleDelta().y()/120
+        self.zfact = pow(1.4, self.zoom_wheel)
 
-        SceneData.zoom_factor = self.zfac
+        self.start_drag_threshold /= self.zfact
+        SceneData.zoom_factor = self.zfact
         TextData.rebuild_all(True)
 
         self.update()

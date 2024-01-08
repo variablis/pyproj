@@ -31,7 +31,17 @@ def points_to_angle_abs(p1: Point, p2: Point):
 
 def point_on_line(mouse_pt: Point, a_pt: Point, b_pt: Point, precision=0.035, endpoint_threshold=0.05):
     '''
-    check if the mouse point is on the line segment defined by a_pt and b_pt
+    checks if the mouse point lies approximately on the line segment defined by points a_pt and b_pt.
+
+    Parameters:
+    - mouse_pt (Point): The point to be checked.
+    - a_pt (Point): The starting point of the line segment.
+    - b_pt (Point): The ending point of the line segment.
+    - precision (float): The maximum allowed perpendicular distance from the line.
+    - endpoint_threshold (float): The maximum allowed distance from either endpoint for consideration.
+
+    Returns:
+    - bool: True if the mouse point is on the line segment within the specified precision.
     '''
         
     # Check if the mouse point is close to one of the endpoints
@@ -65,7 +75,7 @@ def point_on_line(mouse_pt: Point, a_pt: Point, b_pt: Point, precision=0.035, en
 
 def clamp(n, min, max):
     '''
-    clamp value to min max range
+    Clamp a value to be within the specified minimum and maximum range.
     '''
 
     if n < min:

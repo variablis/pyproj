@@ -53,7 +53,7 @@ class Renderer:
         )
         self.vbo4 = ctx.buffer(reserve='4MB', dynamic=True)
         self.vbo4.write(self.make_grid(1, 12))
-        self.vao4 = ctx.vertex_array(self.prog4, self.vbo4, 'in_vert')
+        self.vao4 = ctx.vertex_array(self.prog4, [(self.vbo4, '2f 4f', 'in_vert', 'in_color')])
         self.mvp4 = self.prog4['mvp']
         self.grid_opacity = self.prog4['opacity']
 
@@ -79,16 +79,27 @@ class Renderer:
 
         u = np.linspace(-gsize, gsize, gsize*2 *gstep +1)
 
-        ys=np.column_stack((-gsize*np.ones_like(u), u))
-        ye=np.column_stack((gsize*np.ones_like(u), u))
+        color=np.array([0.0, 1, 0.3, .2])
+
+        ys=np.column_stack((-gsize*np.ones_like(u), u, color * np.ones((len(u), 1)) ))
+        ye=np.column_stack((gsize*np.ones_like(u), u, color * np.ones((len(u), 1)) ))
         hv=np.column_stack((ys,ye))
 
-        xs=np.column_stack((u,-gsize*np.ones_like(u)))
-        xe=np.column_stack((u,gsize*np.ones_like(u)))
+        xs=np.column_stack((u,-gsize*np.ones_like(u), color * np.ones((len(u), 1)) ))
+        xe=np.column_stack((u,gsize*np.ones_like(u), color * np.ones((len(u), 1)) ))
         vv=np.column_stack((xs,xe))
 
         grid = np.concatenate((hv, vv))
-        # print( grid )
+        # # print( grid )
+
+        grid = np.append(grid, [
+            [0.0, 0.0, 0,1,0,1,
+            0.0, 0.5, 0,1,0,1], 
+
+            [0.0, 0.0, 1,0,0,1, 
+            0.5, 0.0, 1,0,0,1]
+        ])
+        
 
         return grid.astype('f4').tobytes()
     
@@ -121,8 +132,12 @@ class Renderer:
         '''
         writes lines vertex data into vertex buffer object, 
         renders new vertex array object, 
-        same line data passed to render end circles in geometry shader
+        same line data passed to render end circles in geometry shader.
+        reder order is important for depth sorting
         '''
+        # render grid
+        self.vao4.render(moderngl.LINES)
+
         # render lines
         data = pts.astype('f4').tobytes()
         self.vbo.clear()
@@ -134,9 +149,6 @@ class Renderer:
             self.vbo2.clear()
             self.vbo2.write(data)
             self.vao2.render(moderngl.POINTS)
-
-        # render grid
-        self.vao4.render(moderngl.LINES)
 
 
     def update_mvp(self, zf, pan):
