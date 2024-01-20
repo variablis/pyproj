@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QApplication, QMainWindow, QToolBar, QFileDialog, QSplitter, QLineEdit, QLabel, QComboBox
+from PyQt6.QtWidgets import QApplication, QMainWindow, QToolBar, QFileDialog, QSplitter, QLineEdit, QLabel, QComboBox, QCheckBox, QSpinBox
 from PyQt6.QtGui import QSurfaceFormat, QRegularExpressionValidator, QIcon, QAction
 from PyQt6.QtCore import Qt, QRegularExpression
 
@@ -71,6 +71,7 @@ class MyMainWindow(QMainWindow):
         create_line.setCheckable(True)
         create_line.toggled.connect(self.mywidget.create_line_tool)
         toolbar2.addAction(create_line)
+        toolbar2.addSeparator()
 
         # TODO:
         # toggle_dimensions = QAction("Toggle dimensions", self)
@@ -78,15 +79,11 @@ class MyMainWindow(QMainWindow):
         # toggle_dimensions.triggered.connect()
         # toolbar2.addAction(toggle_dimensions)
 
-        # allow only integer input 1-25
-        rgx = QRegularExpression("[1-9]|1[0-9]|2[0-5]")
-
         label_grid = QLabel("Grid: ", self)
-        self.input_gridsize = QLineEdit(self)
-        self.input_gridsize.setMaximumWidth(28)
-        self.rx = QRegularExpressionValidator(rgx, self)
-        self.input_gridsize.setValidator(self.rx)
-        self.input_gridsize.setText("1")
+        self.input_gridsize = QSpinBox(self)
+        self.input_gridsize.setFixedWidth(36)
+        self.input_gridsize.setRange(1, 25)
+        self.input_gridsize.setSingleStep(1)
         self.input_gridsize.textChanged[str].connect(self.grid_changed)
 
         toolbar2.addWidget(label_grid)
@@ -101,6 +98,14 @@ class MyMainWindow(QMainWindow):
         toolbar2.addWidget(label_units)
         toolbar2.addWidget(self.input_units)
 
+        self.checkbox_angle = QCheckBox("Show angle:")
+        self.checkbox_angle.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
+        self.checkbox_angle.setChecked(True)
+        self.checkbox_angle.toggled.connect(self.angle_changed)
+        toolbar2.addWidget(self.checkbox_angle)
+
+        toolbar2.setStyleSheet("QLabel, QCheckBox { padding-left: 6px; }")
+
         self.addToolBar(toolbar)
         self.addToolBar(toolbar2)
         
@@ -112,8 +117,18 @@ class MyMainWindow(QMainWindow):
 
 
     def unit_changed(self):
-        selected_value = int(self.input_units.currentText())
-        SceneData.units = selected_value
+        value = int(self.input_units.currentText())
+        SceneData.units = value
+        TextData.rebuild_all(True)
+        self.mywidget.update()
+
+
+    def angle_changed(self, state):
+        if state:
+            TextData.angle_visible = True
+        else:
+            TextData.angle_visible = False
+
         TextData.rebuild_all(True)
         self.mywidget.update()
 

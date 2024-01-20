@@ -3,6 +3,7 @@ temp/
 build/
 dist/
 
+*.zip
 *.spec
 *.drw
 tempCodeRunnerFile.py

@@ -12,11 +12,14 @@ class LineSegment:
         pass
 
 
-    def set_line_text(self, line):
-        distance = line.distance *SceneData.units
-        angle = line.angle
-        text = f"{round(distance,4):.2f} {round(angle,2):.2f}°"
-        return text
+    # def set_line_text(self, line):
+    #     distance = line.distance *SceneData.units
+    #     angle = line.angle
+
+    #     if TextData.angle_visible:
+    #         return f"{round(distance,4):.2f} {round(angle,2):.2f}°"
+    #     else:
+    #         return f"{round(distance,4):.2f}"
 
 
     def start_line(self, mouse_pt):
@@ -26,7 +29,8 @@ class LineSegment:
         LineData.add_startpoint(mouse_pt)
 
         line = LineData.get_last_elem()
-        text = self.set_line_text(line)
+        # text = self.set_line_text(line)
+        text = TextData.make_text(line.distance, line.angle)
         TextData.add(text, line.points, line.line_id)
 
 
@@ -37,6 +41,10 @@ class LineSegment:
         LineData.add_endpoint(mouse_pt)
         # print('segment done')
 
+        # update size after user creates line endpoint
+        line = LineData.get_last_elem()
+        text = TextData.make_text(line.distance, line.angle)
+        TextData.update(text, line.points, line.line_id)
 
     def update_live_point(self, mouse_pt):
         '''
@@ -46,7 +54,8 @@ class LineSegment:
         line.mousepos = mouse_pt
         line.update_point_data(1)
 
-        text = self.set_line_text(line)
+        # text = self.set_line_text(line)
+        text = TextData.make_text(line.distance, line.angle)
         TextData.update(text, line.points, line.line_id)
 
 
@@ -122,7 +131,8 @@ class LineSegment:
                 line.mousepos = mouse_pt
                 line.update_point_data(line.dragtype)
 
-                text = self.set_line_text(line)
+                # text = self.set_line_text(line)
+                text = TextData.make_text(line.distance, line.angle)
                 TextData.update(text, line.points, line.line_id)
 
 

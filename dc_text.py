@@ -24,6 +24,7 @@ class TextData:
     f.close()
 
     texts = []
+    angle_visible = True
 
     def __init__(self, str, points, lid):
         self.lineid = lid
@@ -132,7 +133,7 @@ class TextData:
                 cls.texts[index] = updated_elem
                 break
 
-            
+
     @classmethod
     def delete_selected(cls, ids):
         tmp = [elem for elem in cls.texts if elem.lineid not in ids]
@@ -140,15 +141,29 @@ class TextData:
 
 
     @classmethod
+    def make_text(cls, distance, angle):
+        '''
+        convert distance and angle to string
+        keep 2 decimals without rounding for distance
+        '''
+        distance = distance *SceneData.units
+        intval, decval = str(distance).split('.')
+        distance = f"{intval}.{decval[:2]}"
+        angle = angle
+
+        if TextData.angle_visible:
+            return f"{distance} {angle:.2f}°"
+        else:
+            return f"{distance}"
+
+
+    @classmethod
     def rebuild_all(cls, clear=False):
         if clear:
             cls.texts = []
         for line in LineData.get_all_lines():
-            distance = line.distance *SceneData.units
-            angle = line.angle
-
-            text = f"{round(distance,4):.2f} {round(angle,2):.2f}°"
-            cls.texts.append(cls(text, line.points, line.line_id))
+            str = cls.make_text(line.distance, line.angle)
+            cls.texts.append(cls(str, line.points, line.line_id))
 
 
     @classmethod
