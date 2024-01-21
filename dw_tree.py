@@ -67,7 +67,7 @@ class MyTreeWidget(QTreeWidget):
 
             id = int(item_at_pos.data(1,0))
             if id > -1:
-                line = LineData.get_one_data(id)
+                line = LineData.get_line_data(id)
                 line.color = [1,1,0,1]
                 line.selected = True
                 self.itemSelectionChanged.emit()

@@ -86,7 +86,7 @@ class Group:
                 ch_data= elem["data"]
 
                 LineData.json_to_data(ch_data["points"], ch_data["id"], ch_data["distance"],ch_data["angle"], ch_data["color"], ch_name)
-                new_group.add_child(LineData.get_one_data(ch_data["id"]))
+                new_group.add_child(LineData.get_line_data(ch_data["id"]))
             else:
                 # Recursively create a group
                 cls.json_to_hierarchy(elem, parent=new_group)
@@ -207,7 +207,7 @@ class LineData(Object):
             return cls.lines[-1]
     
     @classmethod
-    def get_one_data(cls, id):
+    def get_line_data(cls, id):
         for elem in cls.lines:
             if elem.line_id==id:
                 return elem
