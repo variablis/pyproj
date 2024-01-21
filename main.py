@@ -71,6 +71,12 @@ class MyMainWindow(QMainWindow):
         create_line.setCheckable(True)
         create_line.toggled.connect(self.mywidget.create_line_tool)
         toolbar2.addAction(create_line)
+
+        perp_constr = QAction("Set perp", self)
+        perp_constr.setCheckable(True)
+        perp_constr.toggled.connect(self.mywidget.perpendicular_constraint_tool)
+        toolbar2.addAction(perp_constr)
+
         toolbar2.addSeparator()
 
         # TODO:

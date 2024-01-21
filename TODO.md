@@ -1,8 +1,6 @@
 # Python vector drawing app
 
 ### Tasks
-- [ ] Line pick tolerance based on zoom
-- [ ] Toggle dimensions visibility
 - [ ] Constraints
  - [ ] Lock position
  - [ ] Set and lock angle between two lines
@@ -17,6 +15,8 @@
  - [ ] Selection box
 
 ### Completed ✓
+- [x] Toggle angle visibility
+- [x] Line pick tolerance based on zoom
 - [x] Set global scene units
 - [x] Set dimensions at line center with offset along normal
 - [x] Rebuild all line text on file open

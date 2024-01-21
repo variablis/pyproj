@@ -12,26 +12,13 @@ class LineSegment:
         pass
 
 
-    # def set_line_text(self, line):
-    #     distance = line.distance *SceneData.units
-    #     angle = line.angle
-
-    #     if TextData.angle_visible:
-    #         return f"{round(distance,4):.2f} {round(angle,2):.2f}°"
-    #     else:
-    #         return f"{round(distance,4):.2f}"
-
-
     def start_line(self, mouse_pt):
         '''
         start new line, starting new line segment
         '''
         LineData.add_startpoint(mouse_pt)
-
         line = LineData.get_last_elem()
-        # text = self.set_line_text(line)
-        text = TextData.make_text(line.distance, line.angle)
-        TextData.add(text, line.points, line.line_id)
+        TextData.add(line)
 
 
     def end_line(self, mouse_pt):
@@ -39,12 +26,11 @@ class LineSegment:
         line segment complete - end line
         '''
         LineData.add_endpoint(mouse_pt)
+        line = LineData.get_last_elem()
+        TextData.update(line)
+
         # print('segment done')
 
-        # update size after user creates line endpoint
-        line = LineData.get_last_elem()
-        text = TextData.make_text(line.distance, line.angle)
-        TextData.update(text, line.points, line.line_id)
 
     def update_live_point(self, mouse_pt):
         '''
@@ -53,10 +39,7 @@ class LineSegment:
         line = LineData.get_last_elem()
         line.mousepos = mouse_pt
         line.update_point_data(1)
-
-        # text = self.set_line_text(line)
-        text = TextData.make_text(line.distance, line.angle)
-        TextData.update(text, line.points, line.line_id)
+        TextData.update(line)
 
 
     def check_point(self, mouse_pt):
@@ -91,6 +74,7 @@ class LineSegment:
         '''
         checks all lines against mouse point to detect if user has clicked on any of them
         '''
+        val = None
         for line in LineData.get_all_lines():
             a_pt = line.points[0]
             b_pt = line.points[1]
@@ -100,8 +84,13 @@ class LineSegment:
             if test == True:
                 line.selected = True
                 line.color = [0,1,.3,1]
+                # print(line)
+                val= line # for constraint test
+
             else:
                 line.selected = False
+        
+        return val
 
 
     def check_drag_point(self, mouse_pt):
@@ -130,10 +119,7 @@ class LineSegment:
             if line.drag:
                 line.mousepos = mouse_pt
                 line.update_point_data(line.dragtype)
-
-                # text = self.set_line_text(line)
-                text = TextData.make_text(line.distance, line.angle)
-                TextData.update(text, line.points, line.line_id)
+                TextData.update(line)
 
 
     def line_stop_drag(self, mouse_pt):

@@ -42,6 +42,7 @@ def point_on_line(mouse_pt: Point, a_pt: Point, b_pt: Point, precision=0.035, en
 
     Returns:
     - bool: True if the mouse point is on the line segment within the specified precision.
+    - int: which point is closest
     '''
         
     # Check if the mouse point is close to one of the endpoints

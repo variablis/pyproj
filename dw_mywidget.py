@@ -35,6 +35,9 @@ class MyWidget(ModernGLWidget):
         self.line_tool_active = False
         self.clickcount = 0
 
+        self.perp_constr_tool_active = False
+        self.firstl = None
+
         self.user_drag_start = None
         self.start_drag_threshold = 0.001
 
@@ -91,6 +94,10 @@ class MyWidget(ModernGLWidget):
         self.clickcount = 0
 
 
+    def perpendicular_constraint_tool(self, checked):
+        self.perp_constr_tool_active = checked
+
+
     def clear_input_focus(self):
         '''
         clear focus of input fields
@@ -127,6 +134,37 @@ class MyWidget(ModernGLWidget):
 
                 if not self.clickcount %2: #clicks in tool are even
                     segment.end_line(self.mpp)
+
+            elif self.perp_constr_tool_active:
+                # print('constr tool')
+                ln = segment.check_clicked_point(self.mpp)
+                self.clickcount += 1
+
+                # print(ln, self.clickcount)
+                
+                
+                if ln and self.clickcount %2: #clicks are odd 2%2 =0 =false first line:
+                    print('first', ln.line_id)
+                    self.firstl = ln
+
+                if ln and not self.clickcount %2: #clicks are even:
+                    print('second', ln.line_id)
+                    secondln = ln
+
+                    if self.firstl != secondln:
+                        flc = self.firstl.constraints.setdefault('perpendicular',[])
+                        slc = secondln.constraints.setdefault('perpendicular',[])
+
+                        if secondln.line_id not in flc:
+                            flc.append(secondln.line_id)
+                        if self.firstl.line_id not in slc:
+                            slc.append(self.firstl.line_id)
+
+                        # LineData.print_data()
+
+                    self.firstl = None
+                    
+
             else:
                 segment.check_clicked_point(self.mpp)
                 segment.check_point(self.mpp)

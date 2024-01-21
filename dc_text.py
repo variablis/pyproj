@@ -121,16 +121,19 @@ class TextData:
 
 
     @classmethod
-    def add(cls, str, points, lid):
-        cls.texts.append(cls(str, points, lid))
+    def add(cls, line):
+        str = cls.make_text(line.distance, line.angle)
+        cls.texts.append(cls(str, line.points, line.line_id))
 
 
     @classmethod
-    def update(cls, str, points, lid):
-        for index, elem in enumerate(cls.texts):
-            if elem.lineid == lid:
-                updated_elem = cls(str, points, lid)
-                cls.texts[index] = updated_elem
+    def update(cls, line):
+        str = cls.make_text(line.distance, line.angle)
+
+        for index, text in enumerate(cls.texts):
+            if text.lineid == line.line_id:
+                updated_text = cls(str, line.points, line.line_id)
+                cls.texts[index] = updated_text
                 break
 
 

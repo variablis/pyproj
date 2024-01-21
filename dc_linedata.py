@@ -86,7 +86,7 @@ class Group:
                 ch_data= elem["data"]
 
                 LineData.json_to_data(ch_data["points"], ch_data["id"], ch_data["distance"],ch_data["angle"], ch_data["color"], ch_name)
-                new_group.add_child(LineData.get_one_data(ch_data["id"]))
+                new_group.add_child(LineData.get_line_data(ch_data["id"]))
             else:
                 # Recursively create a group
                 cls.json_to_hierarchy(elem, parent=new_group)
@@ -124,6 +124,7 @@ class LineData(Object):
         # self.visibility = visibility TODO:
         # self.layer = layer TODO:
         # self.constraints = constraints TODO:
+        self.constraints = {}
 
         self.selected = False
         self.hovered = False
@@ -133,6 +134,8 @@ class LineData(Object):
         self.prev_mousepos = None 
         self.dragtype = None
 
+    def __eq__(self, other): 
+        return self.line_id == other.line_id
 
     def update_point_data(self, pt_id):
         '''
@@ -153,15 +156,41 @@ class LineData(Object):
             delta_y = self.mousepos.y - self.prev_mousepos.y
             delta = Point(delta_x, delta_y)
 
-            p1_orig = self.points[0]
-            p2_orig = self.points[1]
+            p1_orig, p2_orig = self.points
 
             self.points[0] = p1_orig + delta
             self.points[1] = p2_orig + delta
 
         # Update the previous mouse position
         self.prev_mousepos = self.mousepos
-    
+
+        perp = self.constraints.get('perpendicular', None)
+        if perp:
+            for val in perp:
+                line = LineData.get_line_data(val)
+                LineData.set_perp(self, line)
+
+    @classmethod
+    def set_perp(cls, line_a, line_b):
+        # Get the reference line (line_a)
+        p1a, p2a = line_a.points
+
+        # Calculate the direction vector of the reference line
+        direction_vector_a = p2a - p1a
+
+        # Normalize the direction vector
+        normalized_direction_a = direction_vector_a / direction_vector_a.magnitude()
+
+        # Calculate the direction vector of the perpendicular line
+        direction_vector_b = Point(-normalized_direction_a.y, normalized_direction_a.x)
+
+     
+        p1b, p2b = line_b.points
+
+        line_b.points[0] = p1b + direction_vector_b
+        line_b.points[1] = p2b + direction_vector_b
+
+
     @classmethod
     def add_startpoint(cls, startpoint):
         '''
@@ -207,7 +236,7 @@ class LineData(Object):
             return cls.lines[-1]
     
     @classmethod
-    def get_one_data(cls, id):
+    def get_line_data(cls, id):
         for elem in cls.lines:
             if elem.line_id==id:
                 return elem
@@ -244,7 +273,7 @@ class LineData(Object):
     def print_data(cls):
         print(len(cls.lines))
         for elem in cls.lines:
-            print(f"Line ID: {elem.line_id}, Point1: {elem.points[0].xy}, Point2: {elem.points[1].xy}, color: {elem.color}")
+            print(f"Line ID: {elem.line_id}, Point1: {elem.points[0].xy}, Point2: {elem.points[1].xy}, color: {elem.color}, constraints: {elem.constraints}")
 
     def data_to_json(self):
         return {
