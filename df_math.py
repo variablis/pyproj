@@ -56,19 +56,18 @@ def point_on_line(mouse_pt: Point, a_pt: Point, b_pt: Point, precision=0.035, en
     if dist_to_b < endpoint_threshold:
         return True, 1  
 
-    # Vectors from line start to mouse point and along the line segment
-    ap = mouse_pt - a_pt
-    ab = b_pt - a_pt
+    # create 2 vectors
+    v1 = mouse_pt - a_pt
+    v2 = b_pt - a_pt
 
-    # Dot products
-    dot_ap_ab = ap.dot2d(ab)
-    dot_ab_ab = ab.dot2d(ab)
+    # dot product
+    dot_v1v2 = v1.dot2d(v2)
+    dot_v2v2 = v2.dot2d(v2)
 
-    # Check if the mouse point is close enough to the line segment
-    if 0 <= dot_ap_ab <= dot_ab_ab and abs(ap.cross2d(ab)) < precision:
-        # Mouse point is on the line segment
-        return True, 2  
-    
+    # check vector cross product, wich basicaly is triangle area, if area close to 0, assume its on line
+    if 0 <= dot_v1v2 <= dot_v2v2 and abs(v1.cross2d(v2)) < precision:
+        return True, 2
+
     # Mouse point is not on the line segment
     return False, None
 

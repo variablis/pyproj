@@ -1,13 +1,14 @@
-from PyQt6.QtWidgets import QApplication, QMainWindow, QToolBar, QFileDialog, QSplitter, QLineEdit, QLabel, QComboBox, QCheckBox, QSpinBox
-from PyQt6.QtGui import QSurfaceFormat, QRegularExpressionValidator, QIcon, QAction
-from PyQt6.QtCore import Qt, QRegularExpression
+from PyQt6.QtWidgets import QApplication, QMainWindow, QToolBar, QFileDialog, QSplitter, QLabel, QComboBox, QCheckBox, QSpinBox
+from PyQt6.QtGui import QSurfaceFormat, QIcon, QAction
+from PyQt6.QtCore import Qt
 
 import json
 from pathlib import Path
 
 from dw_mywidget import MyWidget
 from dw_tree import MyTreeWidget
-from dc_linedata import LineData, Group, SceneData
+from dc_linedata import LineData, SceneData
+from dc_linesegment import Group
 from dc_text import TextData
 
 
@@ -47,8 +48,8 @@ class MyMainWindow(QMainWindow):
         self.tree.setMaximumWidth(180)
 
         self.root_group = Group('Root')
-        LineData.root = self.root_group
-        LineData.treewidget = self.tree
+        Group.root = self.root_group
+        Group.tree_widget = self.tree
         self.tree.build_hierarchy(self.root_group)
         self.tree.itemSelectionChanged.connect(self.mywidget.update)
 
@@ -138,7 +139,6 @@ class MyMainWindow(QMainWindow):
             ids = LineData.get_selected_ids()
             TextData.delete_selected(ids)
             LineData.delete_selected()
-
             self.mywidget.scene.clear_buffers()
             self.mywidget.update()
 
@@ -150,16 +150,14 @@ class MyMainWindow(QMainWindow):
         LineData.g_index = 0
         LineData.lines=[]
         TextData.texts=[]
-
         self.mywidget.scene.clear_buffers()
         self.mywidget.update()
 
 
     def new_file(self):
         self.reset_all()
-
         self.root_group = Group('Root')
-        LineData.root = self.root_group
+        Group.root = self.root_group
         self.tree.build_hierarchy(self.root_group)
 
 
@@ -172,19 +170,15 @@ class MyMainWindow(QMainWindow):
             data = json.load(f)
 
             self.reset_all()
-
             self.root_group = Group.json_to_hierarchy(data)
-            LineData.root = self.root_group
+            Group.root = self.root_group
             self.tree.build_hierarchy(self.root_group)
-
             TextData.rebuild_all()
             
 
     def save_file(self):
         home_dir = str(Path.cwd())
         fname = QFileDialog.getSaveFileName(self, 'Save file', home_dir, '*.drw')
-
-        # print(self.root_group.hierarchy_to_json())
         
         if fname[0]:
             f = open(fname[0], 'w')

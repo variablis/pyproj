@@ -66,25 +66,19 @@ class TextData:
                             self.pointsarr = [Point(0,0),Point(0,0)]
                             
                         
-                        offs=0.05
+                        offs = 0.05
                         # 4x4 matrix for 4 vertices and 4 uv coordinates (x,y,u,v)
                         ob = np.array([
-                            # -0.5, -0.5, 0.0, 1.0,
-                            # 0.5, -0.5, 1.0, 1.0, 
-                            # 0.5, 0.5,  1.0, 0.0, 
-                            # -0.5, 0.5, 0.0, 0.0, 
-
-                            [xl, yb+offs],
-                            [xr, yb+offs],
-                            [xr, yt+offs], 
-                            [xl, yt+offs], 
+                            [xl, yb +offs],
+                            [xr, yb +offs],
+                            [xr, yt +offs], 
+                            [xl, yt +offs], 
                         ])
 
-                        p1=self.pointsarr[0]
-                        p2=self.pointsarr[1]
-                        midpoint = Point((p1.x+p2.x)/2*zf, (p1.y+p2.y)/2*zf)
+                        p1 = self.pointsarr[0]
+                        p2 = self.pointsarr[1]
+                        midpoint = Point((p1.x +p2.x) /2 *zf, (p1.y +p2.y) /2 *zf)
                         
-
                         off = np.array([
                             [addspace+ midpoint.x, midpoint.y],
                             [addspace+ midpoint.x, midpoint.y],
@@ -101,7 +95,6 @@ class TextData:
 
 
                         # print(ord(s))
-
                         angle = points_to_angle(p1, p2)
 
                         # flip text when angle from 90-270
@@ -122,11 +115,17 @@ class TextData:
 
     @classmethod
     def add(cls, str, points, lid):
+        '''
+        add text to array
+        '''
         cls.texts.append(cls(str, points, lid))
 
 
     @classmethod
     def update(cls, str, points, lid):
+        '''
+        update text by line id
+        '''
         for index, elem in enumerate(cls.texts):
             if elem.lineid == lid:
                 updated_elem = cls(str, points, lid)
@@ -136,6 +135,9 @@ class TextData:
 
     @classmethod
     def delete_selected(cls, ids):
+        '''
+        remove text from array based on line id
+        '''
         tmp = [elem for elem in cls.texts if elem.lineid not in ids]
         cls.texts = tmp
 
@@ -159,6 +161,9 @@ class TextData:
 
     @classmethod
     def rebuild_all(cls, clear=False):
+        '''
+        rebuild all text from line data
+        '''
         if clear:
             cls.texts = []
         for line in LineData.get_all_lines():
@@ -168,6 +173,9 @@ class TextData:
 
     @classmethod
     def make_buffer(cls):
+        '''
+        return vertex array for render buffer
+        '''
         tmp_list = []
         for elem in cls.texts:
             tmp_list.append( elem.vtx )
@@ -177,8 +185,4 @@ class TextData:
         else:
             return np.array([[]])
 
-
-    @classmethod
-    def print_buffer(cls):
-        print(cls.texts)
 

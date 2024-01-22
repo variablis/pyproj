@@ -4,7 +4,8 @@ from PyQt6.QtCore import Qt, pyqtSignal
 
 from pathlib import Path
 
-from dc_linedata import LineData, Group
+from dc_linedata import LineData
+from dc_linesegment import Group
 
 
 # absolute path needed for pyinstaller
@@ -67,7 +68,7 @@ class MyTreeWidget(QTreeWidget):
 
             id = int(item_at_pos.data(1,0))
             if id > -1:
-                line = LineData.get_line_data(id)
+                line = LineData.get_line_by_id(id)
                 line.color = [1,1,0,1]
                 line.selected = True
                 self.itemSelectionChanged.emit()
