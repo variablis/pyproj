@@ -26,7 +26,7 @@ class MyWidget(ModernGLWidget):
     main opengl widget
     '''
     def __init__(self):
-        super(MyWidget, self).__init__()
+        super().__init__()
 
         self.scene = None
         self.zoom_wheel = 0
@@ -120,13 +120,14 @@ class MyWidget(ModernGLWidget):
         if event.button() == Qt.MouseButton.LeftButton:
 
             if self.line_tool_active:
-                if not self.clickcount %2: #clicks in tool are even
+                if  self.clickcount ==0: 
                     segment.start_line(self.mpp)
 
                 self.clickcount += 1
 
-                if not self.clickcount %2: #clicks in tool are even
+                if  self.clickcount ==2: 
                     segment.end_line(self.mpp)
+                    self.clickcount = 0
             else:
                 segment.check_clicked_point(self.mpp)
                 segment.check_point(self.mpp)
@@ -152,7 +153,7 @@ class MyWidget(ModernGLWidget):
                 self.user_drag_start = None
 
         if self.line_tool_active:
-            if self.clickcount %2: # 3 %2 = 1 = True
+            if self.clickcount ==1: 
                 segment.update_live_point(self.mpp)
 
         else:

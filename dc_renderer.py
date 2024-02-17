@@ -67,13 +67,16 @@ class Renderer:
         self.mvp3 = self.prog3['mvp']
 
         # font texture
-        img = Image.open(path_to_msdf / "fonts.bmp").convert('RGB')
-        self.tex0 = self.ctx.texture(img.size, 3, img.tobytes())
+        img = Image.open(path_to_msdf/'fonts.bmp').convert('RGB')
+        self.tex0 = self.ctx.texture(img.size, 3, img.tobytes(), samples=0)
         self.s1 = self.ctx.sampler()
         self.s1.texture = self.tex0
-        
+    
 
     def make_grid(self, unit, size):
+        '''
+        bg grid setup
+        '''
         gsize = unit*size
         gstep = unit
 

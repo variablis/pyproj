@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import QApplication, QMainWindow, QToolBar, QFileDialog, QSplitter, QLabel, QComboBox, QCheckBox, QSpinBox
-from PyQt6.QtGui import QSurfaceFormat, QIcon, QAction
+from PyQt6.QtGui import QIcon, QAction
 from PyQt6.QtCore import Qt
 
 import json
@@ -24,13 +24,8 @@ class MyMainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        fmt = QSurfaceFormat()
-        fmt.setVersion(3, 3)
-        fmt.setSamples(4) # multi-sampling
-        
         self.mywidget = MyWidget()
         self.mywidget.setMouseTracking(True)
-        self.mywidget.setFormat(fmt)
         self.mywidget.setGeometry(0, 0, 300, 300)
 
         self.setGeometry(100, 100, 512, 512)

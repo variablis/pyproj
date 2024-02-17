@@ -23,92 +23,99 @@ class TextData:
     data = json.load(f)
     f.close()
 
+    atlas = data["atlas"]
+    glyphs = data["glyphs"]
+
     texts = []
     angle_visible = True
 
     def __init__(self, str, points, lid):
+        self.image_w = TextData.atlas['width']
+        self.image_h = TextData.atlas['height']
         self.lineid = lid
         self.str = str
         self.pointsarr = points
         self.vtx = self.text_to_vertices()
 
 
+
     def text_to_vertices(self):
         '''
         return array of quad vertices for each char
         '''
-        zf = SceneData.zoom_factor
-        image = (256, 256)
         arr=[]
+        zf = SceneData.zoom_factor
+
         for i,s in enumerate(self.str):
-            addspace = 0.0
-            if s==' ':
-                addspace = 0.5
-            else:
-                for glyph in TextData.data.get("glyphs", []):
-                    if glyph.get("unicode") == ord(s):
-                        dd = glyph.get("atlasBounds", {})
-                        pb = glyph.get("planeBounds", {})
+            for glyph in TextData.glyphs:
+                if glyph["unicode"] == ord(s):
 
-                        sc = 0.06
+                    ofs = glyph["advance"] # glyph spacing
+                    pb = glyph.get("planeBounds") # glyph plane bounds
+                    dd = glyph.get("atlasBounds") # glyph coords in generated texture
 
-                        xl=(pb['left']+i*.5)*sc
-                        xr=(pb['right']+i*.5)*sc
-                        yt=pb['top']*sc
-                        yb=pb['bottom']*sc
+                    if not pb:
+                        pb = dd = {'left':0, 'right':0, 'top':0, 'bottom':0}
 
-                        sl=dd['left']/image[0]
-                        sr=dd['right']/image[0]
-                        tt=1-dd['top']/image[1]
-                        tb=1-dd['bottom']/image[1]
-                        
-                        if not self.pointsarr:
-                            self.pointsarr = [Point(0,0),Point(0,0)]
-                            
-                        
-                        offs = 0.05
-                        # 4x4 matrix for 4 vertices and 4 uv coordinates (x,y,u,v)
-                        ob = np.array([
-                            [xl, yb +offs],
-                            [xr, yb +offs],
-                            [xr, yt +offs], 
-                            [xl, yt +offs], 
-                        ])
+                    sc = 0.065
 
-                        p1 = self.pointsarr[0]
-                        p2 = self.pointsarr[1]
-                        midpoint = Point((p1.x +p2.x) /2 *zf, (p1.y +p2.y) /2 *zf)
-                        
-                        off = np.array([
-                            [addspace+ midpoint.x, midpoint.y],
-                            [addspace+ midpoint.x, midpoint.y],
-                            [addspace+ midpoint.x, midpoint.y],
-                            [addspace+ midpoint.x, midpoint.y],
-                        ])
+                    xl = (pb['left']+i*ofs)*sc
+                    xr = (pb['right']+i*ofs)*sc
+                    yt = pb['top']*sc
+                    yb = pb['bottom']*sc
 
-                        uv = np.array([
-                            [sl, tb],
-                            [sr, tb],
-                            [sr, tt],
-                            [sl, tt]
-                        ])
+                    sl = dd['left'] /self.image_w
+                    sr = dd['right'] /self.image_w
+                    tt = 1-dd['top'] /self.image_h
+                    tb = 1-dd['bottom'] /self.image_h
+                    
+ 
+                    # 4x4 matrix for 4 vertices and 4 uv coordinates (x,y,u,v)
+                    ob = np.array([
+                        [xl, yb],
+                        [xr, yb],
+                        [xr, yt], 
+                        [xl, yt],
+                    ])
+
+                    if not self.pointsarr:
+                        self.pointsarr = [Point(0,0),Point(0,0)]
+
+                    p1 = self.pointsarr[0]
+                    p2 = self.pointsarr[1]
+                    midpoint = Point((p1.x +p2.x) /2 *zf, (p1.y +p2.y) /2 *zf)
+                    
+                    yoffs = 0.05
+                    off = np.array([
+                        [ midpoint.x, midpoint.y +yoffs],
+                        [ midpoint.x, midpoint.y +yoffs],
+                        [ midpoint.x, midpoint.y +yoffs],
+                        [ midpoint.x, midpoint.y +yoffs],
+                    ])
+
+                    uv = np.array([
+                        [sl, tb],
+                        [sr, tb],
+                        [sr, tt],
+                        [sl, tt]
+                    ])
 
 
-                        # print(ord(s))
-                        angle = points_to_angle(p1, p2)
+                    # print(ord(s))
+                    angle = points_to_angle(p1, p2)
 
-                        # flip text when angle from 90-270
-                        if angle > 90 and angle < 270:
-                            angle = angle - 180
-                        
+                    # flip text when angle from 90-270
+                    if angle > 90 and angle < 270:
+                        angle = angle - 180
+                    
 
-                        angle = np.radians(-angle)
-                        # Create a 2D rotation matrix
-                        rotation_matrix = pyrr.Matrix33.from_eulers([0.0, angle, 0.0])
-                        # Apply the rotation matrix to each point
-                        rotated_points = np.dot(ob, rotation_matrix[:2, :2])
-                        narr = np.concatenate(((rotated_points+off)/zf, uv), axis=1)
-                        arr.append(narr.tolist())
+                    angle = np.radians(-angle)
+                    # Create a 2D rotation matrix
+                    rotation_matrix = pyrr.Matrix33.from_eulers([0.0, angle, 0.0])
+                    # Apply the rotation matrix to each point
+                    rotated_points = np.dot(ob, rotation_matrix[:2, :2])
+                    narr = np.concatenate(((rotated_points+off)/zf, uv), axis=1)
+                    arr.append(narr.tolist())
 
         return arr
 

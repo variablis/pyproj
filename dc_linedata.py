@@ -100,8 +100,8 @@ class LineData:
         '''
         add line to array
         '''
-        if cls.g_index < line.line_id:
-            cls.g_index = line.line_id + 1
+        # if cls.g_index < line.line_id:
+        cls.g_index = line.line_id + 1
 
         cls.lines.append(line)
 
